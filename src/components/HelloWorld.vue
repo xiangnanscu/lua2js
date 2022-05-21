@@ -17,7 +17,7 @@ const luacode = ref("")
   </div>
   <div class="row">
     <pre class="col-4">{{ lua2ast(luacode) }}</pre>
-    <div class="col-8">{{ lua2js(luacode) }}</div>
+    <pre class="col-8">{{ lua2js(luacode) }}</pre>
   </div>
 </template>
 
