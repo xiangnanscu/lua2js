@@ -1,13 +1,34 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { lua2ast, lua2js, ast2js } from './lua2js.js'
+import fs from "file-saver";
 
 defineProps({
   msg: String
 })
-
+const jscodeRef = ref(null)
 const count = ref(0)
-const luacode = ref("")
+const luacode = ref(`
+Sql = class {
+  a = 1,
+  foo = function(self, n)
+    self.n = n
+    return 'instance method'
+  end,
+  bar = function(cls, n)
+    cls.n = n
+    return 'class method'
+  end
+}
+`)
+const jscode = computed(()=>lua2js(luacode.value))
+function copyJs() {
+  jscodeRef.value.select();
+  document.execCommand("copy");
+}
+function saveJsAs() {
+  fs.saveAs(new Blob([jscode.value]), "test.js")
+}
 </script>
 
 <template>
@@ -17,7 +38,10 @@ const luacode = ref("")
   </div>
   <div class="row">
     <pre class="col-4">{{ lua2ast(luacode) }}</pre>
-    <pre class="col-8">{{ lua2js(luacode) }}</pre>
+    <div class="col-8">
+      <button @click="copyJs">复制</button><button @click="saveJsAs">另存为</button><br/>
+      <textarea :value="jscode" ref="jscode" class="form-control" rows="100"></textarea>
+    </div>
   </div>
 </template>
 

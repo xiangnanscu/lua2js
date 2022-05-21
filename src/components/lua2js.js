@@ -2,6 +2,23 @@ import luaparse from "luaparse";
 import prettier from "prettier/standalone";
 import parserBabel from "prettier/parser-babel";
 
+// let Sql = class {
+//   static a = 1;
+//   foo(n) {
+//     this.n = n;
+//     return "instance method";
+//   }
+//   static bar(n) {
+//     this.n = n;
+//     return "class method";
+//   }
+// };
+// console.log(Sql.bar(1), Sql.n);
+// let s = new Sql()
+// console.log(s.foo(100), s.n);
+
+
+
 // "base": {
 //             "type": "MemberExpression",
 //             "indexer": ".",
@@ -15,7 +32,7 @@ import parserBabel from "prettier/parser-babel";
 //             }
 // }
 const IdentifierMap = {
-  extends:"_extends",
+  extends: "_extends",
   class: "_class",
   default: "_js_default",
   debugger: "_debugger",
@@ -175,6 +192,11 @@ function selfToThis(ast) {
     ast.name = "this";
   }
 }
+function clsToThis(ast) {
+  if (ast.type === "Identifier" && ast.name === "cls") {
+    ast.name = "this";
+  }
+}
 function smartPack(args) {
   switch (args.length) {
     case 0:
@@ -312,17 +334,36 @@ function ast2js(ast, joiner) {
       case "LogicalExpression":
         return `(${ast2js(ast.left)} ${binaryOpMap[ast.operator] || ast.operator} ${ast2js(ast.right)})`;
       case "TableConstructorExpression":
-        let is_pure_array = ast.fields.length > 0 && ast.fields.every((e) => e.type == "TableValue");
-        if (is_pure_array) {
-          tagVarargAsSpread(ast.fields.map((e) => e.value));
-          return `[${ast2js(ast.fields, ", ")}]`;
+        if (ast.isClassMode) {
+          for (const field of ast.fields) {
+            if (field.type === "TableKeyString") {
+              field.isClassMode = true;
+              field.value.isClassMode = true;
+            }
+          }
+          return `{${ast2js(ast.fields, "\n")}}`;
         } else {
-          return `{${ast2js(ast.fields, ", ")}}`;
+          let is_pure_array = ast.fields.length > 0 && ast.fields.every((e) => e.type == "TableValue");
+          if (is_pure_array) {
+            tagVarargAsSpread(ast.fields.map((e) => e.value));
+            return `[${ast2js(ast.fields, ", ")}]`;
+          } else {
+            return `{${ast2js(ast.fields, ", ")}}`;
+          }
         }
       case "TableKeyString":
-        return `${ast2js(ast.key)}: ${ast2js({ asFirst: true, ...ast.value })}`;
+        if (ast.isClassMode) {
+          if (ast.value.type == "FunctionDeclaration") {
+            ast.value.identifier = ast.key.name;
+            return `${ast2js(ast.value)}`;
+          } else {
+            return `static ${ast2js(ast.key)} = ${ast2js(ast.value)}`;
+          }
+        } else {
+          return `${ast2js(ast.key)}: ${ast2js(ast.value)}`;
+        }
       case "TableKey":
-        return `[${ast2js(ast.key)}]: ${ast2js({ asFirst: true, ...ast.value })}`;
+        return `[${ast2js(ast.key)}]: ${ast2js(ast.value)}`;
       case "TableValue":
         return ast2js(ast.value);
       case "IndexExpression":
@@ -336,26 +377,40 @@ function ast2js(ast, joiner) {
       case "ElseifClause":
         return `else if (${ast2js(ast.condition)}) {${ast2js(ast.body)}}`;
       case "FunctionDeclaration":
-        if (
-          ast.identifier?.type == "MemberExpression" &&
-          ast.identifier?.indexer == "." &&
-          ast.parameters[0]?.name == "self"
-        ) {
-          ast.parameters = ast.parameters.slice(1);
-          traverseAst(ast.body, selfToThis);
-        } else if (ast.identifier?.type == "MemberExpression" && ast.identifier?.indexer == ":") {
-          traverseAst(ast.body, selfToThis);
-        }
         tagVarargAsSpread(ast.parameters);
-        let main = `(${ast.parameters.map(ast2js).join(", ")}){${ast2js(ast.body)}}`;
-        if (ast.identifier == null) {
-          return `function ${main}`;
+        if (ast.isClassMode) {
+          let firstParamsName = ast.parameters[0]?.name;
+          switch (firstParamsName) {
+            case "self":
+              traverseAst(ast.body, selfToThis);
+              return `${ast.identifier}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
+            case "cls":
+              traverseAst(ast.body, clsToThis);
+              return `static ${ast.identifier}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
+            default:
+            return `${ast.identifier}(${ast2js(ast.parameters, ", ")}) {${ast2js(ast.body)}}`;
+          }
         } else {
-          let fn_name = ast2js(ast.identifier);
-          if (ast.identifier?.type == "MemberExpression") {
-            return `${fn_name} = function ${main}`;
+          if (
+            ast.identifier?.type == "MemberExpression" &&
+            ast.identifier?.indexer == "." &&
+            ast.parameters[0]?.name == "self"
+          ) {
+            ast.parameters = ast.parameters.slice(1);
+            traverseAst(ast.body, selfToThis);
+          } else if (ast.identifier?.type == "MemberExpression" && ast.identifier?.indexer == ":") {
+            traverseAst(ast.body, selfToThis);
+          }
+          let main = `(${ast.parameters.map(ast2js).join(", ")}){${ast2js(ast.body)}}`;
+          if (ast.identifier == null) {
+            return `function ${main}`;
           } else {
-            return `${ast.isLocal ? "let " : ""} ${fn_name} = function ${fn_name}${main}`;
+            let fn_name = ast2js(ast.identifier);
+            if (ast.identifier?.type == "MemberExpression") {
+              return `${fn_name} = function ${main}`;
+            } else {
+              return `${ast.isLocal ? "let " : ""} ${fn_name} = function ${fn_name}${main}`;
+            }
           }
         }
       case "MemberExpression":
@@ -389,7 +444,13 @@ function ast2js(ast, joiner) {
           return `${ast2js(ast.base)}(${ast.arguments.map(ast2js).join(", ")})`;
         }
       case "TableCallExpression":
-        return `${ast2js(ast.base)}(${ast2js(ast.arguments)})`;
+        if (ast.base.type == "Identifier" && ast.base.name == "class") {
+          ast.arguments.isClassMode = true;
+          return `class ${ast2js(ast.arguments)}`;
+        } else {
+          return `${ast2js(ast.base)}(${ast2js(ast.arguments)})`;
+        }
+
       case "StringCallExpression":
         return `${ast2js(ast.base)}(${ast2js(ast.argument)})`;
       case "ForNumericStatement":
@@ -448,4 +509,4 @@ function lua2js(lua_code) {
   }
 }
 
-export  { lua2ast, lua2js, ast2js };
+export { lua2ast, lua2js, ast2js };
