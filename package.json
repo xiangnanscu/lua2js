@@ -6,6 +6,7 @@
     "nginx": "nginx -p . -c nginx.conf",
     "nginx:reload": "yarn nginx -s reload",
     "nginx:stop": "yarn nginx -s stop",
+    "release": "yarn build && git add . && git commit -am 'release' && git push p master",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
