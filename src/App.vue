@@ -7,7 +7,7 @@ import HelloWorld from './components/HelloWorld.vue'
 <template>
   <div class="row">
     <h1>vue3 app lab</h1>
-    <HelloWorld msg="Hello Vue 3 + Vite" />
+    <div class="col"><HelloWorld msg="Hello Vue 3 + Vite" /></div>
   </div>
 </template>
 
