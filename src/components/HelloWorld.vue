@@ -40,7 +40,7 @@ function saveJsAs() {
     <pre class="col-4">{{ lua2ast(luacode) }}</pre>
     <div class="col-8">
       <button @click="copyJs">复制</button><button @click="saveJsAs">另存为</button><br/>
-      <textarea :value="jscode" ref="jscode" class="form-control" rows="100"></textarea>
+      <textarea :value="jscode" ref="jscodeRef" class="form-control" rows="100"></textarea>
     </div>
   </div>
 </template>
