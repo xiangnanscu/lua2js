@@ -1,6 +1,6 @@
-let luaparse = require("luaparse")
-let prettier = require("prettier/standalone")
-let parserBabel = require("prettier/parser-babel")
+import luaparse from "luaparse";
+import prettier from "prettier/standalone.js";
+import parserBabel from "prettier/parser-babel.js";
 
 class Sql {
   static a = 1;
@@ -573,6 +573,5 @@ function lua2js(lua_code) {
     return `/*\n${error}\n*/\n${js}`;
   }
 }
-module.exports = { lua2ast, lua2js, ast2js };
-exports.default = { lua2ast, lua2js, ast2js }
+export { lua2ast, lua2js, ast2js };
 
