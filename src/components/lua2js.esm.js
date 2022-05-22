@@ -6,7 +6,7 @@ class Sql {
   static a = 1;
   foo(n) {
     console.log(this instanceof Sql);
-    console.log("call foo: instance method1", n);
+    console.log("call foo: instance method", n);
     Object.getPrototypeOf(this).constructor.bar(200);
     Sql.bar(300);
     this.n = n;
@@ -110,7 +110,6 @@ function luaConcat2JsJoin(ast) {
 function isAssertCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name === "assert";
 }
-
 function luaAssert2JsIfThrow(ast) {
   // tansform lua assert(bool, error) to js if (!bool) {throw new Error(error)}
   if (ast.arguments.length == 1) {
@@ -496,8 +495,8 @@ function ast2js(ast, joiner) {
           return luaInsert2JsPush(ast);
         } else if (isTableConcatCall(ast)) {
           return luaConcat2JsJoin(ast);
-        } else if (isAssertCall(ast)) {
-          return luaAssert2JsIfThrow(ast);
+        // } else if (isAssertCall(ast)) {
+        //   return luaAssert2JsIfThrow(ast);
         } else if (isTypeCall(ast)) {
           return luaType2JsTypeof(ast);
         } else if (ast.arguments[0]?.name == "this") {
@@ -574,4 +573,3 @@ function lua2js(lua_code) {
   }
 }
 export { lua2ast, lua2js, ast2js };
-
