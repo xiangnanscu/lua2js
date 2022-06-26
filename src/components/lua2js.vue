@@ -78,23 +78,28 @@ function CopyToClipboard(containerid) {
 </script>
 
 <template>
-  <h1>lua2js - transform lua to js literally</h1>
-  <div class="row">
-    <div class="col">
-      <button @click="luacode=''">clear textarea</button>
-      <button @click="copyJs">copy js</button><button @click="saveJsAs">save as</button><br />
+  <div>
+    <div class="row">
+      <div class="col">
+        <div style="text-align: center;">
+          <h1><a href="https://github.com/xiangnanscu/lua2js">lua2js</a> - transform lua to js literally </h1>
+          <div></div>
+          <button @click="luacode=''">clear textarea</button>
+          <button @click="copyJs">copy js</button><button @click="saveJsAs">save as</button><br />
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      <textarea rows="10" style="height:800px" class="form-control" :value="luacode"
-        @input="luacode = $event.target.value"></textarea>
-    </div>
-    <div class="col">
-      <pre><code class="language-lua">{{ luacode }}</code></pre>
-    </div>
-    <div class="col">
-      <pre id="jscode"><code class="language-javascript">{{ jscode }}</code></pre>
+    <div class="row">
+      <div class="col">
+        <textarea rows="10" style="height:800px" class="form-control" :value="luacode"
+          @input="luacode = $event.target.value"></textarea>
+      </div>
+      <div class="col">
+        <pre><code class="language-lua">{{ luacode }}</code></pre>
+      </div>
+      <div class="col">
+        <pre id="jscode"><code class="language-javascript">{{ jscode }}</code></pre>
+      </div>
     </div>
   </div>
 </template>

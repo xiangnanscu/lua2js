@@ -5,11 +5,7 @@ import lua2js from './components/lua2js.vue'
 </script>
 
 <template>
-  <div class="row">
-    <div class="col">
-      <lua2js />
-    </div>
-  </div>
+  <lua2js />
 </template>
 
 <style lang="scss">
