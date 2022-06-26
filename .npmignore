@@ -1,0 +1,7 @@
+nginx.conf
+vite.config.js
+logs
+node_modules
+.vscode
+public
+tmp

@@ -1,14 +1,14 @@
 <script setup>
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import HelloWorld from './components/HelloWorld.vue'
-import Test from './components/Test.vue'
+import lua2js from './components/lua2js.vue'
 </script>
 
 <template>
   <div class="row">
-    <h1>vue3 app lab</h1>
-    <div class="col"><HelloWorld msg="Hello Vue 3 + Vite" /></div>
+    <div class="col">
+      <lua2js />
+    </div>
   </div>
 </template>
 

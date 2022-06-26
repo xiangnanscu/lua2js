@@ -1,24 +1,40 @@
-let luaparse = require("luaparse")
-let prettier = require("prettier/standalone")
-let parserBabel = require("prettier/parser-babel")
+import luaparse from "luaparse";
+import prettier from "prettier/standalone.js";
+import parserBabel from "prettier/parser-babel.js";
 
-class Sql {
-  static a = 1;
-  foo(n) {
-    console.log(this instanceof Sql);
-    console.log("call foo: instance method1", n);
-    Object.getPrototypeOf(this).constructor.bar(200);
-    Sql.bar(300);
-    this.n = n;
+function toCamel(s) {
+  let status = -1
+  let res = []
+  for (const c of s) {
+    if (c == '_') {
+      if (status == -1) {
+        res.push(c)
+      } else if (status == 0) {
+        status = 1
+      } else if (status == 1) {
+        res.push('__')
+        status = 0
+      }
+    } else if (status == -1) {
+      //第一个非_字符
+      res.push(c)
+      status = 0
+    } else if (status == 0) {
+      res.push(c)
+    } else {
+      if (/[A-Z]/.test(c)) {
+        res.push('_'+c)
+      } else {
+        res.push(c.toUpperCase())
+      }
+      status = 0
+    }
   }
-  static bar(n) {
-    console.log("call bar: class method", n);
-    this.n = n;
+  if (status == 1) {
+    res.push('_')
   }
+  return res.join('')
 }
-console.log(Sql.bar(1), Sql.n);
-let s = new Sql();
-console.log(s.foo(100), s.n, Sql.n);
 
 // "base": {
 //             "type": "MemberExpression",
@@ -33,6 +49,7 @@ console.log(s.foo(100), s.n, Sql.n);
 //             }
 // }
 const IdentifierMap = {
+  constructor: "_constructor",
   extends: "_extends",
   class: "_class",
   default: "_js_default",
@@ -62,6 +79,9 @@ function traverseAst(ast, callback) {
   } else {
   }
 }
+function isClassExtends(ast) {
+  return ast.base.type == 'Identifier' && ast.base.name == 'class' && ast.arguments instanceof Array && ast.arguments.length == 2
+}
 function isErrorCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "error";
 }
@@ -80,17 +100,33 @@ function isStringFormatCall(ast) {
   );
 }
 function isTableInsertCall(ast) {
-  return (
+  return ast.arguments?.length == 2 && (
     (ast.base?.type === "Identifier" && ast.base?.name === "table_insert") ||
     (ast.base?.type === "MemberExpression" &&
       ast.base?.identifier?.name === "insert" &&
       ast.base?.base?.name === "table")
   );
 }
+function isNumerOne(ast) {
+  return ast.type == 'NumericLiteral' && ast.value == 1
+}
+function isTableInsertAtHeadCall(ast) {
+  return ast.arguments?.length == 3 && isNumerOne(ast.arguments[1]) && (
+    (ast.base?.type === "Identifier" && ast.base?.name === "table_insert") ||
+    (ast.base?.type === "MemberExpression" &&
+      ast.base?.identifier?.name === "insert" &&
+      ast.base?.base?.name === "table")
+  );
+}
+function luaInsert2JsUnshift(ast) {
+  // tansform lua table.insert(t, 1) / table_insert(t, 1) to js t.push(1)
+  let [base, index, element] = ast.arguments;
+  return `${ast2js(base)}.unshift(${ast2js(element)})`;
+}
 function luaInsert2JsPush(ast) {
   // tansform lua table.insert(t, 1) / table_insert(t, 1) to js t.push(1)
-  let [base, index] = ast.arguments;
-  return `${ast2js(base)}.push(${ast2js(index)})`;
+  let [base, element] = ast.arguments;
+  return `${ast2js(base)}.push(${ast2js(element)})`;
 }
 
 function isTableConcatCall(ast) {
@@ -110,7 +146,6 @@ function luaConcat2JsJoin(ast) {
 function isAssertCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name === "assert";
 }
-
 function luaAssert2JsIfThrow(ast) {
   // tansform lua assert(bool, error) to js if (!bool) {throw new Error(error)}
   if (ast.arguments.length == 1) {
@@ -323,6 +358,10 @@ function isSelectNumber(node) {
     node.arguments[1]?.type == "VarargLiteral"
   );
 }
+
+function isClassDeclare(ast) {
+  return ast.variables.length == 1 && ast.init.length == 1 && ((ast.init[0].type == 'TableCallExpression' || ast.init[0].type == 'CallExpression') && ast.init[0].base?.name == 'class')
+}
 function ast2js(ast, joiner) {
   try {
     if (ast instanceof Array) {
@@ -337,13 +376,17 @@ function ast2js(ast, joiner) {
         });
         return ast2js(ast.body);
       case "Identifier":
-        return IdentifierMap[ast.name] || ast.name;
+        return toCamel(IdentifierMap[ast.name] || ast.name)
       case "BreakStatement":
         return "break";
       case "DoStatement":
         return `{${ast2js(ast.body)}}`;
       case "AssignmentStatement":
       case "LocalStatement":
+        if (isClassDeclare(ast)) {
+          ast.init[0].className = toCamel(ast.variables[0].name)
+          return ast2js(ast.init[0])
+        }
         if (isTableInsert(ast)) {
           return `${ast2js(ast.variables[0].base)}.push(${ast2js(ast.init)})`;
         }
@@ -411,10 +454,13 @@ function ast2js(ast, joiner) {
       case "TableKeyString":
         if (ast.isClassMode) {
           if (ast.value.type == "FunctionDeclaration") {
-            ast.value.identifier = ast.key.name;
+            ast.value.identifier = {
+              "type": "Identifier",
+              "name": ast.key.name
+            }
             return `${ast2js(ast.value)}`;
           } else {
-            return `static ${ast2js(ast.key)} = ${ast2js(ast.value)}`;
+            return `${ast2js(ast.key)} = ${ast2js(ast.value)}`;
           }
         } else {
           return `${ast2js(ast.key)}: ${ast2js(ast.value)}`;
@@ -440,12 +486,12 @@ function ast2js(ast, joiner) {
           switch (firstParamsName) {
             case "self":
               traverseAst(ast.body, selfToThis);
-              return `${ast.identifier}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
+              return `${ast2js(ast.identifier)}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
             case "cls":
               traverseAst(ast.body, clsToThis);
-              return `static ${ast.identifier}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
+              return `static ${ast2js(ast.identifier)}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
             default:
-              return `${ast.identifier}(${ast2js(ast.parameters, ", ")}) {${ast2js(ast.body)}}`;
+              return `${ast2js(ast.identifier)}(${ast2js(ast.parameters, ", ")}) {${ast2js(ast.body)}}`;
           }
         } else {
           if (
@@ -466,7 +512,8 @@ function ast2js(ast, joiner) {
             if (ast.identifier?.type == "MemberExpression") {
               return `${fn_name} = function ${main}`;
             } else {
-              return `${ast.isLocal ? "let " : ""} ${fn_name} = function ${fn_name}${main}`;
+              // return `${ast.isLocal ? "let " : ""} ${fn_name} = function ${fn_name}${main}`;
+              return `function ${fn_name}${main}`;
             }
           }
         }
@@ -484,7 +531,14 @@ function ast2js(ast, joiner) {
       case "CallStatement":
         return ast2js(ast.expression);
       case "CallExpression":
-        if (isSelectLength(ast)) {
+        if (ast.base.type == "Identifier" && ast.base.name == "class" && ast.className) {
+          ast.arguments[0].isClassMode = true
+          return `class ${ast.className} ${ast.arguments.length == 1 ? '' : 'extends ' + ast2js(ast.arguments[1])} ${ast2js(ast.arguments[0])}`;
+        } else if (isClassExtends(ast)) {
+          let [cls, pcls] = ast.arguments
+          cls.isClassMode = true
+          return `class ${ast2js(cls)} extends ${ast2js(pcls)}`;
+        } else if (isSelectLength(ast)) {
           return `varargs.length`;
         } else if (isSelectNumber(ast)) {
           return `varargs[${ast2js(ast.arguments[0])}]`;
@@ -494,10 +548,12 @@ function ast2js(ast, joiner) {
           return luaError2JsThrow(ast);
         } else if (isTableInsertCall(ast)) {
           return luaInsert2JsPush(ast);
+        } else if (isTableInsertAtHeadCall(ast)) {
+          return luaInsert2JsUnshift(ast);
         } else if (isTableConcatCall(ast)) {
           return luaConcat2JsJoin(ast);
-        } else if (isAssertCall(ast)) {
-          return luaAssert2JsIfThrow(ast);
+          // } else if (isAssertCall(ast)) {
+          //   return luaAssert2JsIfThrow(ast);
         } else if (isTypeCall(ast)) {
           return luaType2JsTypeof(ast);
         } else if (ast.arguments[0]?.name == "this") {
@@ -511,7 +567,11 @@ function ast2js(ast, joiner) {
       case "TableCallExpression":
         if (ast.base.type == "Identifier" && ast.base.name == "class") {
           ast.arguments.isClassMode = true;
-          return `class ${ast2js(ast.arguments)}`;
+          if (ast.className) {
+            return `class ${ast.className} ${ast2js(ast.arguments)}`;
+          } else {
+            return `class ${ast2js(ast.arguments)}`;
+          }
         } else {
           return `${ast2js(ast.base)}(${ast2js(ast.arguments)})`;
         }
@@ -573,6 +633,4 @@ function lua2js(lua_code) {
     return `/*\n${error}\n*/\n${js}`;
   }
 }
-module.exports = { lua2ast, lua2js, ast2js };
-exports.default = { lua2ast, lua2js, ast2js }
-
+export { lua2ast, lua2js, ast2js };
