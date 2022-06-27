@@ -5,7 +5,7 @@
     "nginx": "nginx -p . -c nginx.conf",
     "nginx:reload": "yarn nginx -s reload",
     "nginx:stop": "yarn nginx -s stop",
-    "release": "yarn build && git add . && git commit -am 'release' && git push origin master",
+    "push": "git add . && git commit -am 'push' && git push origin master",
     "deploy": "rm -rf dist && ./deploy.sh",
     "dev": "vite",
     "build": "vite build",
