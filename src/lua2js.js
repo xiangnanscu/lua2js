@@ -433,9 +433,11 @@ function ast2js(ast, joiner) {
       case "TableConstructorExpression":
         if (ast.isClassMode) {
           for (const field of ast.fields) {
-            if (field.type === "TableKeyString") {
+            if (field.type === "TableKeyString" && field.value.type !== "TableConstructorExpression") {
               field.isClassMode = true;
               field.value.isClassMode = true;
+            } else {
+ 
             }
           }
           return `{${ast2js(ast.fields, "\n")}}`;

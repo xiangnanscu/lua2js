@@ -7,6 +7,7 @@
     "nginx:stop": "yarn nginx -s stop",
     "push": "git add . && git commit -am 'push' && git push origin master",
     "deploy": "rm -rf dist && ./deploy.sh",
+    "deploys": "USE_HTTPS= yarn deploy",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

@@ -2,9 +2,16 @@
 import { ref, computed } from 'vue'
 import { lua2js, lua2ast } from '../lua2js.js'
 import fs from "file-saver";
+import prettier from "prettier/standalone.js";
+import parserBabel from "prettier/parser-babel.js";
 
 const jscodeRef = ref(null)
+const showLuaAst = ref(false)
 const luacode = ref(`\
+a = {1,2}
+Test = class {
+  a = {1, 2}
+}
 t[#t+1] = 1
 table_insert(t,1,a)
 table.insert(t,1,a)
@@ -46,6 +53,7 @@ table_concat(t, ",")
 table_concat({1,2,3}, ",")
 `)
 const jscode = computed(() => lua2js(luacode.value))
+const luaast = computed(() => lua2ast(luacode.value))
 const jscode_highlight_html = computed(() => hljs.highlight(jscode.value, {language: 'js'}).value)
 function copyJs() {
   CopyToClipboard('jscode');
@@ -85,8 +93,10 @@ function CopyToClipboard(containerid) {
         <div style="text-align: center;">
           <h1><a href="https://github.com/xiangnanscu/lua2js">lua2js</a> - transform lua to js literally </h1>
           <div></div>
+          <label><input @input="showLuaAst=!showLuaAst" :value="showLuaAst" type="checkbox" />lua ast</label>
           <button @click="luacode=''">clear textarea</button>
-          <button @click="copyJs">copy js</button><button @click="saveJsAs">save as</button><br />
+          <button @click="copyJs">copy js</button>
+          <button @click="saveJsAs">save as</button>
         </div>
       </div>
     </div>
@@ -95,7 +105,10 @@ function CopyToClipboard(containerid) {
         <textarea rows="10" style="height:800px" class="form-control" :value="luacode"
           @input="luacode = $event.target.value"></textarea>
       </div>
-      <div class="col">
+      <div v-if="showLuaAst" class="col">
+        <pre>{{ luaast }}</pre>
+      </div>
+      <div v-else class="col">
         <highlightjs language='lua' :code="luacode" />
       </div>
       <div class="col">
@@ -109,5 +122,8 @@ function CopyToClipboard(containerid) {
 <style scoped>
 a {
   color: #42b983;
+}
+.col {
+  overflow: scroll;
 }
 </style>
