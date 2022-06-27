@@ -46,6 +46,7 @@ table_concat(t, ",")
 table_concat({1,2,3}, ",")
 `)
 const jscode = computed(() => lua2js(luacode.value))
+const jscode_highlight_html = computed(() => hljs.highlight(jscode.value, {language: 'js'}).value)
 function copyJs() {
   CopyToClipboard('jscode');
 }
@@ -95,10 +96,11 @@ function CopyToClipboard(containerid) {
           @input="luacode = $event.target.value"></textarea>
       </div>
       <div class="col">
-        <pre><code class="language-lua">{{ luacode }}</code></pre>
+        <highlightjs language='lua' :code="luacode" />
       </div>
       <div class="col">
-        <pre id="jscode"><code class="language-javascript">{{ jscode }}</code></pre>
+        <!-- <pre id="jscode"><code class="language-javascript" v-html="jscode_highlight_html"></code></pre> -->
+        <highlightjs language='javascript' :code="jscode" />
       </div>
     </div>
   </div>
