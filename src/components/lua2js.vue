@@ -8,18 +8,34 @@ import parserBabel from "prettier/parser-babel.js";
 const jscodeRef = ref(null)
 const showLuaAst = ref(false)
 const luacode = ref(`\
-a = {1,2}
-Test = class {
-  a = {1, 2}
-}
+local function snake_case_name(x, y)
+  if x > 0 or y > 0then
+    return nil, string.format('error: x is %s and y is %s', x, y)
+  else
+    return x + y
+  end
+end
+console.log(string.format("hello %s", world))
+console.log(string.format([[hello:
+  you are multiple line %s]], world))
+type(x+1)
+table.concat(t, ",")
+table_concat(t, ",")
+table_concat({1,2,3}, ",")
 t[#t+1] = 1
 table_insert(t,1,a)
 table.insert(t,1,a)
 table_insert(t, 1)
 table.insert(t, 1)
+local array = {1,2}
+local dict = {a=1, b=2}
+Test = class {
+  a = {1, 2}
+}
 local function foo(x, y)
   return x + y
 end
+local c = {a=1}
 function c.foo(x, y)
   return x + y
 end
@@ -29,28 +45,25 @@ end
 function c:foo(x, y)
   return x + y + self.n
 end
-local a = class {
+local TestClass = class {
   p1 = 'Hi class property p1',
   p2 = 'Hi class property p2',
-  classMethod = function(cls)
-    cls.sayClassHi()
+  static_func = function(x, y)
+    return x + y
   end,
-  sayClassHi = function(cls)
+  class_method = function(cls)
+    cls:say_class_hi()
+  end,
+  say_class_hi = function(cls)
     console.log(cls.p1)
   end,
-  instanceMethod = function(self)
-    self.sayInstanceHi()
+  instance_method = function(self)
+    self:say_instance_hi()
   end,
-  sayInstanceHi = function(self)
+  say_instance_hi = function(self)
     console.log(this.p2)
   end
 }
-type(x+1)
-assert(a > 1)
-assert(a > 1, "error: a <= 1")
-table.concat(t, ",")
-table_concat(t, ",")
-table_concat({1,2,3}, ",")
 `)
 const jscode = computed(() => lua2js(luacode.value))
 const luaast = computed(() => lua2ast(luacode.value))
@@ -93,7 +106,11 @@ function CopyToClipboard(containerid) {
         <div style="text-align: center;">
           <h1><a href="https://github.com/xiangnanscu/lua2js">lua2js</a> - transform lua to js literally </h1>
           <div></div>
-          <label><input @input="showLuaAst=!showLuaAst" :value="showLuaAst" type="checkbox" />lua ast</label>
+          <div class="form-check-inline">
+            <label class="form-check-label">
+              <input @input="showLuaAst=!showLuaAst" :value="showLuaAst" type="checkbox"
+                class="form-check-input" />show lua ast</label>
+          </div>
           <button @click="luacode=''">clear textarea</button>
           <button @click="copyJs">copy js</button>
           <button @click="saveJsAs">save as</button>

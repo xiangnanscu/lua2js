@@ -2,18 +2,22 @@ import luaparse from "luaparse";
 import prettier from "prettier/standalone.js";
 import parserBabel from "prettier/parser-babel.js";
 
+function joinUnderscore(length) {
+  return Array.from({ length }, () => '_').join("")
+}
 function toCamel(s) {
   let status = -1
   let res = []
+  let longUnderscoreCnt = 0
   for (const c of s) {
     if (c == '_') {
       if (status == -1) {
         res.push(c)
       } else if (status == 0) {
         status = 1
-      } else if (status == 1) {
-        res.push('__')
-        status = 0
+      } else if (status == 1 || status == 2) {
+        status = 2
+        longUnderscoreCnt += 1
       }
     } else if (status == -1) {
       //第一个非_字符
@@ -21,17 +25,22 @@ function toCamel(s) {
       status = 0
     } else if (status == 0) {
       res.push(c)
-    } else {
+    } else if (status == 1) {
       if (/[A-Z]/.test(c)) {
         res.push('_'+c)
       } else {
         res.push(c.toUpperCase())
       }
       status = 0
+    } else if (status == 2) {
+      res.push(joinUnderscore(longUnderscoreCnt + 1) + c)
+      status = 0
     }
   }
   if (status == 1) {
     res.push('_')
+  } else if (status == 2) {
+    res.push(joinUnderscore(longUnderscoreCnt + 1))
   }
   return res.join('')
 }
@@ -244,6 +253,9 @@ function luaLiteral2Js(s) {
     return c + s + c;
   }
 }
+function isReturnNilAndErr(ast) {
+  return ast.arguments?.length == 2 && ast.arguments[0].type == 'NilLiteral'
+}
 function luaFormat2JsTemplate(ast) {
   let s = getLuaStringToken(ast.arguments[0].raw);
   let status = 0;
@@ -437,7 +449,7 @@ function ast2js(ast, joiner) {
               field.isClassMode = true;
               field.value.isClassMode = true;
             } else {
- 
+
             }
           }
           return `{${ast2js(ast.fields, "\n")}}`;
@@ -523,6 +535,9 @@ function ast2js(ast, joiner) {
         // let hide_self = ast.indexer == ":";
         return `${ast2js(ast.base)}.${ast2js(ast.identifier)}`;
       case "ReturnStatement":
+        if (isReturnNilAndErr(ast)) {
+          return `throw new Error(${ast2js(ast.arguments[1])})`
+        }
         tagVarargAsSpread(ast.arguments);
         if (ast.asExport) {
           return `export default ${smartPack(ast.arguments)}`;
