@@ -137,9 +137,6 @@ function CopyToClipboard(containerid) {
 </template>
 
 <style scoped>
-a {
-  color: #42b983;
-}
 .col {
   overflow: scroll;
 }

@@ -29,4 +29,7 @@ $blue: #04405e !default;
 $sidebar-background-color: #eeeeee;
 $sidebar-hover-color: #37424f;
 @import "node_modules/bootstrap/scss/bootstrap.scss";
+span.hljs-string {
+  color: #22863A
+}
 </style>
