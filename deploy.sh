@@ -28,3 +28,4 @@ else
   git push -f git@github.com:xiangnanscu/lua2js.git master:gh-pages
 fi
 cd -
+yarn push

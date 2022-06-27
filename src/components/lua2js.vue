@@ -99,8 +99,8 @@ function CopyToClipboard(containerid) {
         <highlightjs language='lua' :code="luacode" />
       </div>
       <div class="col">
-        <!-- <pre id="jscode"><code class="language-javascript" v-html="jscode_highlight_html"></code></pre> -->
-        <highlightjs language='javascript' :code="jscode" />
+        <!-- <pre id="jscode2"><code class="language-javascript" v-html="jscode_highlight_html"></code></pre> -->
+        <highlightjs id="jscode" language='javascript' :code="jscode" />
       </div>
     </div>
   </div>
