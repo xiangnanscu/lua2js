@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { lua2js, lua2ast } from '../lua2js.js'
+import { lua2js, lua2ast } from '../lua2js.mjs'
 import fs from "file-saver";
 import prettier from "prettier/standalone.js";
 import parserBabel from "prettier/parser-babel.js";
