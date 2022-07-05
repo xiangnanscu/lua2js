@@ -1,6 +1,7 @@
 {
   "name": "@xiangnanscu/lua2js",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "main": "src/lua2js.js",
   "scripts": {
     "nginx": "nginx -p . -c nginx.conf",
     "nginx:reload": "yarn nginx -s reload",
