@@ -20,7 +20,7 @@ git commit -m 'deploy'
 
 # if you are deploying to https://<USERNAME>.github.io/<REPO>
 
-if [ -v $USE_HTTPS ]; then
+if [ ! -z $USE_HTTPS ]; then
   echo "use https proto"
   git push -f https://github.com/xiangnanscu/lua2js.git master:gh-pages
 else
@@ -29,3 +29,5 @@ else
 fi
 cd -
 yarn push
+
+
