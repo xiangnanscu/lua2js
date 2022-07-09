@@ -2,8 +2,6 @@
 import { ref, computed } from 'vue'
 import { lua2js, lua2ast } from '../lua2js.mjs'
 import fs from "file-saver";
-import prettier from "prettier/standalone.js";
-import parserBabel from "prettier/parser-babel.js";
 
 const jscodeRef = ref(null)
 const showLuaAst = ref(false)
@@ -67,7 +65,7 @@ local TestClass = class {
 `)
 const jscode = computed(() => lua2js(luacode.value))
 const luaast = computed(() => lua2ast(luacode.value))
-const jscode_highlight_html = computed(() => hljs.highlight(jscode.value, {language: 'js'}).value)
+const jscode_highlight_html = computed(() => hljs.highlight(jscode.value, { language: 'js' }).value)
 function copyJs() {
   CopyToClipboard('jscode');
 }
@@ -103,33 +101,31 @@ function CopyToClipboard(containerid) {
   <div>
     <div class="row">
       <div class="col">
-        <div style="text-align: center;">
-          <h1><a href="https://github.com/xiangnanscu/lua2js">lua2js</a> - transform lua to js literally </h1>
-          <div></div>
-          <div class="form-check-inline">
-            <label class="form-check-label">
-              <input @input="showLuaAst=!showLuaAst" :value="showLuaAst" type="checkbox"
-                class="form-check-input" />show lua ast</label>
-          </div>
-          <button @click="luacode=''">clear textarea</button>
-          <button @click="copyJs">copy js</button>
-          <button @click="saveJsAs">save as</button>
-        </div>
       </div>
     </div>
     <div class="row">
       <div class="col">
+        <button @click="luacode = ''">clear textarea</button>
         <textarea rows="10" style="height:800px" class="form-control" :value="luacode"
           @input="luacode = $event.target.value"></textarea>
       </div>
-      <div v-if="showLuaAst" class="col">
-        <pre>{{ luaast }}</pre>
-      </div>
-      <div v-else class="col">
-        <highlightjs language='lua' :code="luacode" />
+      <div class="col">
+        <div class="form-check-inline">
+          <label class="form-check-label">
+            <input @input="showLuaAst = !showLuaAst" :value="showLuaAst" type="checkbox" class="form-check-input" />show
+            lua ast</label>
+        </div>
+        <div v-if="showLuaAst">
+          <pre>{{ luaast }}</pre>
+        </div>
+        <div v-else>
+          <highlightjs language='lua' :code="luacode" />
+        </div>
       </div>
       <div class="col">
         <!-- <pre id="jscode2"><code class="language-javascript" v-html="jscode_highlight_html"></code></pre> -->
+        <button @click="copyJs">copy js</button>
+        <button @click="saveJsAs">save as</button>
         <highlightjs id="jscode" language='javascript' :code="jscode" />
       </div>
     </div>

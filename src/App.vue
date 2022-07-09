@@ -1,11 +1,14 @@
 <script setup>
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import lua2js from './components/lua2js.vue'
+import MainPage from './components/MainPage.vue'
+import packages from '../package.json'
 </script>
 
 <template>
-  <lua2js />
+  <h1><a href="https://github.com/xiangnanscu/lua2js">{{ packages.name }}-{{packages.version}}</a> - transform lua to js
+    literally</h1>
+  <MainPage />
 </template>
 
 <style lang="scss">
