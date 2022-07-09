@@ -1,0 +1,34 @@
+name: Build and Deploy To gh-pages
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - name: Setup node env 📦
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: https://registry.npmjs.org
+          check-latest: true
+          cache: 'npm'
+
+      - name: Upgrade npm ✨
+        run: npm i -g npm@latest
+
+      - name: Install dependencies 🚀
+        run: npm ci --prefer-offline --no-audit --no-optional
+
+      - name: Build 🔧
+        run: npm run build
+
+      - name: Deploy to GitHub Pages 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.3.4
+        with:
+          branch: gh-pages
+          folder: dist
