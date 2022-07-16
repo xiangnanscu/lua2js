@@ -27,7 +27,7 @@ function toCamel(s) {
       res.push(c)
     } else if (status == 1) {
       if (/[A-Z]/.test(c)) {
-        res.push('_'+c)
+        res.push('_' + c)
       } else {
         res.push(c.toUpperCase())
       }
@@ -489,7 +489,13 @@ function ast2js(ast, joiner) {
       case "TableValue":
         return ast2js(ast.value);
       case "IndexExpression":
-        return `${ast2js(ast.base)}[${ast2js(ast.index)}]`;
+        if (ast.index?.type == 'NumericLiteral' && ast.index.value >= 1) {
+          ast.index.value = ast.index.value - 1
+          return `${ast2js(ast.base)}[${ast2js(ast.index)}]`;
+        } else {
+          return `${ast2js(ast.base)}[${ast2js(ast.index)}]`;
+        }
+
       case "IfStatement":
         return ast.clauses.map(ast2js).join("\n");
       case "IfClause":
@@ -581,6 +587,17 @@ function ast2js(ast, joiner) {
         } else if (ast.arguments[0]?.name == "this") {
           tagVarargAsSpread(ast.arguments);
           let rest = ast.arguments.slice(1);
+          if (ast.base.base) {
+            ast.base.base = {
+              "type": "MemberExpression",
+              "indexer": ".",
+              "identifier": {
+                "type": "Identifier",
+                "name": "prototype"
+              },
+              "base": ast.base.base
+            }
+          }
           return `${ast2js(ast.base)}.call(this${rest.length > 0 ? ", " : ""}${rest.map(ast2js).join(", ")})`;
         } else {
           tagVarargAsSpread(ast.arguments);
