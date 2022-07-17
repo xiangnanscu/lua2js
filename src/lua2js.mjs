@@ -34,6 +34,7 @@ function toCamel(s) {
       status = 0
     } else if (status == 2) {
       res.push(joinUnderscore(longUnderscoreCnt + 1) + c)
+      longUnderscoreCnt = 0
       status = 0
     }
   }
