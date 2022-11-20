@@ -89,6 +89,17 @@ function traverseAst(ast, callback) {
   } else {
   }
 }
+function insertPrototypeNode(base) {
+  return {
+    "type": "MemberExpression",
+    "indexer": ".",
+    "identifier": {
+      "type": "Identifier",
+      "name": "prototype"
+    },
+    "base": base
+  }
+}
 function isClassExtends(ast) {
   return ast.base.type == 'Identifier' && ast.base.name == 'class' && ast.arguments instanceof Array && ast.arguments.length == 2
 }
@@ -152,7 +163,9 @@ function luaConcat2JsJoin(ast) {
   // tansform lua table.concat(t, ',') / table_concat(t, ',') to js t.join(',')
   return `${ast2js(ast.arguments[0])}.join(${ast.arguments[1] ? ast2js(ast.arguments[1]) : '""'})`;
 }
-
+function isInstanceMethod(ast) {
+  return ast.type == 'FunctionDeclaration' && ast.identifier?.type == 'MemberExpression' && ast.parameters[0] && ast.parameters[0].type == 'Identifier' && ast.parameters[0].name == 'self'
+}
 function isAssertCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name === "assert";
 }
@@ -525,21 +538,28 @@ function ast2js(ast, joiner) {
             ast.identifier?.indexer == "." &&
             ast.parameters[0]?.name == "self"
           ) {
+            ast.identifier.base = insertPrototypeNode(ast.identifier.base)
             ast.parameters = ast.parameters.slice(1);
             traverseAst(ast.body, selfToThis);
           } else if (ast.identifier?.type == "MemberExpression" && ast.identifier?.indexer == ":") {
+            ast.identifier.base = insertPrototypeNode(ast.identifier.base)
             traverseAst(ast.body, selfToThis);
+          } else if (ast.identifier?.type == "MemberExpression" &&
+            ast.identifier?.indexer == "." &&
+            ast.parameters[0]?.name == "cls") {
+            ast.parameters = ast.parameters.slice(1);
+            traverseAst(ast.body, clsToThis);
           }
           let main = `(${ast.parameters.map(ast2js).join(", ")}){${ast2js(ast.body)}}`;
           if (ast.identifier == null) {
             return `function ${main}`;
           } else {
-            let fn_name = ast2js(ast.identifier);
+            let fnName = ast2js(ast.identifier);
             if (ast.identifier?.type == "MemberExpression") {
-              return `${fn_name} = function ${main}`;
+              return `${fnName} = function ${main}`;
             } else {
               // return `${ast.isLocal ? "let " : ""} ${fn_name} = function ${fn_name}${main}`;
-              return `function ${fn_name}${main}`;
+              return `function ${fnName}${main}`;
             }
           }
         }
@@ -562,7 +582,8 @@ function ast2js(ast, joiner) {
       case "CallExpression":
         if (ast.base.type == "Identifier" && ast.base.name == "class" && ast.className) {
           ast.arguments[0].isClassMode = true
-          return `class ${ast.className} ${ast.arguments.length == 1 ? '' : 'extends ' + ast2js(ast.arguments[1])} ${ast2js(ast.arguments[0])}`;
+          const extendsToken = ast.arguments.length == 1 ? '' : 'extends ' + ast2js(ast.arguments[1])
+          return `class ${ast.className} ${extendsToken} ${ast2js(ast.arguments[0])}`;
         } else if (isClassExtends(ast)) {
           let [cls, pcls] = ast.arguments
           cls.isClassMode = true

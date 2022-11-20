@@ -5,7 +5,7 @@ import fs from "file-saver";
 
 const jscodeRef = ref(null)
 const showLuaAst = ref(false)
-const luacode = ref(`\
+let luacode = ref(`\
 local function snake_case_name(x, y)
   if x > 0 or y > 0then
     return nil, string.format('error: x is %s and y is %s', x, y)
@@ -63,6 +63,12 @@ local TestClass = class {
   end
 }
 `)
+// luacode.value = `function foo.bar(self)
+
+// end
+// local Child = class({
+//   echo = function(self) end
+// }, Parent)`
 const jscode = computed(() => lua2js(luacode.value))
 const luaast = computed(() => lua2ast(luacode.value))
 const jscode_highlight_html = computed(() => hljs.highlight(jscode.value, { language: 'js' }).value)
