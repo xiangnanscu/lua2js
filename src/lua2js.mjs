@@ -2,6 +2,7 @@ import luaparse from "luaparse";
 import prettier from "prettier/standalone.js";
 import parserBabel from "prettier/parser-babel.js";
 
+// todo: for _, v in ipairs(t) => for v of t , NOT for [_, v] of t.entries()
 function joinUnderscore(length) {
   return Array.from({ length }, () => "_").join("");
 }
@@ -109,6 +110,14 @@ function isClassExtends(ast) {
 }
 function isErrorCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "error";
+}
+
+function isTostringCall(ast) {
+  return ast.base?.type === "Identifier" && ast.base?.name == "tostring";
+}
+
+function isUnpackCall(ast) {
+  return ast.base?.type === "Identifier" && ast.base?.name == "unpack";
 }
 
 function isStringFormatCall(ast) {
@@ -466,9 +475,8 @@ function ast2js(ast, opts = {}) {
       case "BinaryExpression":
         ast.left.isBinaryExpressionMode = true;
         ast.right.isBinaryExpressionMode = true;
-        return `(${_ast2js(ast.left)} ${
-          binaryOpMap[ast.operator] || ast.operator
-        } ${_ast2js(ast.right)})`;
+        return `(${_ast2js(ast.left)} ${binaryOpMap[ast.operator] || ast.operator
+          } ${_ast2js(ast.right)})`;
       case "BooleanLiteral":
         return ast.raw;
       case "NumericLiteral":
@@ -488,12 +496,11 @@ function ast2js(ast, opts = {}) {
         return ast.asSpread
           ? "...varargs"
           : ast.asArray
-          ? "[...varargs]"
-          : "varargs[0]";
+            ? "[...varargs]"
+            : "varargs[0]";
       case "LogicalExpression":
-        return `(${_ast2js(ast.left)} ${
-          binaryOpMap[ast.operator] || ast.operator
-        } ${_ast2js(ast.right)})`;
+        return `(${_ast2js(ast.left)} ${binaryOpMap[ast.operator] || ast.operator
+          } ${_ast2js(ast.right)})`;
       case "TableConstructorExpression":
         if (ast.isClassMode) {
           for (const field of ast.fields) {
@@ -657,6 +664,10 @@ function ast2js(ast, opts = {}) {
           return luaFormat2JsTemplate(ast);
         } else if (opts.errorToThrow && isErrorCall(ast)) {
           return `throw new Error(${_ast2js(ast.arguments[0])})`;
+        } else if (opts.errorToThrow && isTostringCall(ast)) {
+          return `String(${_ast2js(ast.arguments[0])})`;
+        } else if (opts.unpack && isUnpackCall(ast)) {
+          return `...${_ast2js(ast.arguments[0])}`;
         } else if (opts.tableInsert && isTableInsertCall(ast)) {
           // tansform lua table.insert(t, 1) / table_insert(t, 1) to js t.push(1)
           const [base, element] = ast.arguments;
@@ -665,14 +676,14 @@ function ast2js(ast, opts = {}) {
           const [base, index, element] = ast.arguments;
           return `${_ast2js(base)}.unshift(${_ast2js(element)})`;
         } else if (opts.tableConcat && isTableConcatCall(ast)) {
-          return `${_ast2js(ast.arguments[0])}.join(${
-            ast.arguments[1] ? _ast2js(ast.arguments[1]) : '""'
-          })`;
+          return `${_ast2js(ast.arguments[0])}.join(${ast.arguments[1] ? _ast2js(ast.arguments[1]) : '""'
+            })`;
           // } else if (isAssertCall(ast)) {
           //   return luaAssert2JsIfThrow(ast);
         } else if (opts.typeToTypeof && isTypeCall(ast)) {
           return `typeof(${_ast2js(ast.arguments[0])})`;
         } else if (ast.arguments[0]?.name == "this") {
+          // lua: Class.foo(self, ...)
           tagVarargAsSpread(ast.arguments);
           const rest = ast.arguments.slice(1);
           if (ast.base.base) {
@@ -686,9 +697,8 @@ function ast2js(ast, opts = {}) {
               base: ast.base.base,
             };
           }
-          return `${_ast2js(ast.base)}.call(this${
-            rest.length > 0 ? ", " : ""
-          }${rest.map(_ast2js).join(", ")})`;
+          return `${_ast2js(ast.base)}.call(this${rest.length > 0 ? ", " : ""
+            }${rest.map(_ast2js).join(", ")})`;
         } else {
           tagVarargAsSpread(ast.arguments);
           return `${_ast2js(ast.base)}(${ast.arguments
