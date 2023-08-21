@@ -3,47 +3,47 @@ import prettier from "prettier/standalone.js";
 import parserBabel from "prettier/parser-babel.js";
 
 function joinUnderscore(length) {
-  return Array.from({ length }, () => '_').join("")
+  return Array.from({ length }, () => "_").join("");
 }
 function toCamel(s) {
-  let status = -1
-  let res = []
-  let longUnderscoreCnt = 0
+  let status = -1;
+  const res = [];
+  let longUnderscoreCnt = 0;
   for (const c of s) {
-    if (c == '_') {
+    if (c == "_") {
       if (status == -1) {
-        res.push(c)
+        res.push(c);
       } else if (status == 0) {
-        status = 1
+        status = 1;
       } else if (status == 1 || status == 2) {
-        status = 2
-        longUnderscoreCnt += 1
+        status = 2;
+        longUnderscoreCnt += 1;
       }
     } else if (status == -1) {
       //第一个非_字符
-      res.push(c)
-      status = 0
+      res.push(c);
+      status = 0;
     } else if (status == 0) {
-      res.push(c)
+      res.push(c);
     } else if (status == 1) {
       if (/[A-Z]/.test(c)) {
-        res.push('_' + c)
+        res.push("_" + c);
       } else {
-        res.push(c.toUpperCase())
+        res.push(c.toUpperCase());
       }
-      status = 0
+      status = 0;
     } else if (status == 2) {
-      res.push(joinUnderscore(longUnderscoreCnt + 1) + c)
-      longUnderscoreCnt = 0
-      status = 0
+      res.push(joinUnderscore(longUnderscoreCnt + 1) + c);
+      longUnderscoreCnt = 0;
+      status = 0;
     }
   }
   if (status == 1) {
-    res.push('_')
+    res.push("_");
   } else if (status == 2) {
-    res.push(joinUnderscore(longUnderscoreCnt + 1))
+    res.push(joinUnderscore(longUnderscoreCnt + 1));
   }
-  return res.join('')
+  return res.join("");
 }
 
 // "base": {
@@ -81,34 +81,36 @@ function traverseAst(ast, callback) {
     if (ast.type !== undefined) {
       callback(ast);
     }
-    for (let key in ast) {
+    for (const key in ast) {
       if (key !== "type") {
         traverseAst(ast[key], callback);
       }
     }
-  } else {
   }
 }
 function insertPrototypeNode(base) {
   return {
-    "type": "MemberExpression",
-    "indexer": ".",
-    "identifier": {
-      "type": "Identifier",
-      "name": "prototype"
+    type: "MemberExpression",
+    indexer: ".",
+    identifier: {
+      type: "Identifier",
+      name: "prototype",
     },
-    "base": base
-  }
+    base: base,
+  };
 }
 function isClassExtends(ast) {
-  return ast.base.type == 'Identifier' && ast.base.name == 'class' && ast.arguments instanceof Array && ast.arguments.length == 2
+  return (
+    ast.base.type == "Identifier" &&
+    ast.base.name == "class" &&
+    ast.arguments instanceof Array &&
+    ast.arguments.length == 2
+  );
 }
 function isErrorCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "error";
 }
-function luaError2JsThrow(ast) {
-  return `throw new Error(${ast2js(ast.arguments[0])})`;
-}
+
 function isStringFormatCall(ast) {
   return (
     ((ast.base?.type === "Identifier" && ast.base?.name === "string_format") ||
@@ -121,33 +123,26 @@ function isStringFormatCall(ast) {
   );
 }
 function isTableInsertCall(ast) {
-  return ast.arguments?.length == 2 && (
-    (ast.base?.type === "Identifier" && ast.base?.name === "table_insert") ||
-    (ast.base?.type === "MemberExpression" &&
-      ast.base?.identifier?.name === "insert" &&
-      ast.base?.base?.name === "table")
+  return (
+    ast.arguments?.length == 2 &&
+    ((ast.base?.type === "Identifier" && ast.base?.name === "table_insert") ||
+      (ast.base?.type === "MemberExpression" &&
+        ast.base?.identifier?.name === "insert" &&
+        ast.base?.base?.name === "table"))
   );
 }
 function isNumerOne(ast) {
-  return ast.type == 'NumericLiteral' && ast.value == 1
+  return ast.type == "NumericLiteral" && ast.value == 1;
 }
 function isTableInsertAtHeadCall(ast) {
-  return ast.arguments?.length == 3 && isNumerOne(ast.arguments[1]) && (
-    (ast.base?.type === "Identifier" && ast.base?.name === "table_insert") ||
-    (ast.base?.type === "MemberExpression" &&
-      ast.base?.identifier?.name === "insert" &&
-      ast.base?.base?.name === "table")
+  return (
+    ast.arguments?.length == 3 &&
+    isNumerOne(ast.arguments[1]) &&
+    ((ast.base?.type === "Identifier" && ast.base?.name === "table_insert") ||
+      (ast.base?.type === "MemberExpression" &&
+        ast.base?.identifier?.name === "insert" &&
+        ast.base?.base?.name === "table"))
   );
-}
-function luaInsert2JsUnshift(ast) {
-  // tansform lua table.insert(t, 1) / table_insert(t, 1) to js t.push(1)
-  let [base, index, element] = ast.arguments;
-  return `${ast2js(base)}.unshift(${ast2js(element)})`;
-}
-function luaInsert2JsPush(ast) {
-  // tansform lua table.insert(t, 1) / table_insert(t, 1) to js t.push(1)
-  let [base, element] = ast.arguments;
-  return `${ast2js(base)}.push(${ast2js(element)})`;
 }
 
 function isTableConcatCall(ast) {
@@ -159,32 +154,23 @@ function isTableConcatCall(ast) {
   );
 }
 
-function luaConcat2JsJoin(ast) {
-  // tansform lua table.concat(t, ',') / table_concat(t, ',') to js t.join(',')
-  return `${ast2js(ast.arguments[0])}.join(${ast.arguments[1] ? ast2js(ast.arguments[1]) : '""'})`;
-}
 function isInstanceMethod(ast) {
-  return ast.type == 'FunctionDeclaration' && ast.identifier?.type == 'MemberExpression' && ast.parameters[0] && ast.parameters[0].type == 'Identifier' && ast.parameters[0].name == 'self'
+  return (
+    ast.type == "FunctionDeclaration" &&
+    ast.identifier?.type == "MemberExpression" &&
+    ast.parameters[0] &&
+    ast.parameters[0].type == "Identifier" &&
+    ast.parameters[0].name == "self"
+  );
 }
 function isAssertCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name === "assert";
 }
-function luaAssert2JsIfThrow(ast) {
-  // tansform lua assert(bool, error) to js if (!bool) {throw new Error(error)}
-  if (ast.arguments.length == 1) {
-    return `if (!(${ast2js(ast.arguments[0])})) {throw new Error("assertion failed!")}`;
-  } else {
-    return `if (!(${ast2js(ast.arguments[0])})) {throw new Error(${ast2js(ast.arguments[1])})}`;
-  }
-}
+
 function isTypeCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name === "type";
 }
 
-function luaType2JsTypeof(ast) {
-  // tansform lua type(foo) js typeof(foo)
-  return `typeof(${ast2js(ast.arguments[0])})`;
-}
 // {
 //       "type": "AssignmentStatement",
 //       "variables": [
@@ -233,33 +219,39 @@ function isTableInsert(ast) {
   if (ast.type !== "AssignmentStatement") {
     return;
   }
-  if (ast.variables?.length !== 1 || ast.variables[0]?.type !== "IndexExpression") {
+  if (
+    ast.variables?.length !== 1 ||
+    ast.variables[0]?.type !== "IndexExpression"
+  ) {
     return;
   }
-  let index = ast.variables[0]?.index;
+  const index = ast.variables[0]?.index;
   if (!index) {
     return;
   }
   if (index.type !== "BinaryExpression" || index.operator !== "+") {
     return;
   }
-  let basename = ast.variables[0]?.base?.name;
+  const basename = ast.variables[0]?.base?.name;
   if (!basename) {
     return;
   }
-  return isIndexPlusOne(index.left, index.right, basename) || isIndexPlusOne(index.right, index.left, basename);
+  return (
+    isIndexPlusOne(index.left, index.right, basename) ||
+    isIndexPlusOne(index.right, index.left, basename)
+  );
 }
 function getLuaStringToken(s) {
   if (s[0] == "[") {
-    let cut = s.indexOf("[", 1) + 1;
-    let start_cut = s[cut] == "\n" ? cut + 1 : cut;
+    const cut = s.indexOf("[", 1) + 1;
+    const start_cut = s[cut] == "\n" ? cut + 1 : cut;
     return s.slice(start_cut, -cut);
   } else {
     return s.slice(1, -1);
   }
 }
 function luaLiteral2Js(s) {
-  let c = s[0];
+  const c = s[0];
   s = getLuaStringToken(s);
   if (c == "[") {
     return "`" + s.replace("`", "\\`") + "`";
@@ -268,33 +260,7 @@ function luaLiteral2Js(s) {
   }
 }
 function isReturnNilAndErr(ast) {
-  return ast.arguments?.length == 2 && ast.arguments[0].type == 'NilLiteral'
-}
-function luaFormat2JsTemplate(ast) {
-  let s = getLuaStringToken(ast.arguments[0].raw);
-  let status = 0;
-  let res = [];
-  let j = 0;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (c === "%") {
-      if (status === 0) {
-        status = 1;
-      } else if (status === 1) {
-        status = 0;
-        res.push(c);
-      }
-    } else if (c === "s" && status === 1) {
-      j = j + 1;
-      res.push("${" + ast2js(ast.arguments[j]) + "}");
-      status = 0;
-    } else if (c === "`") {
-      res.push("\\" + c);
-    } else {
-      res.push(c);
-    }
-  }
-  return "`" + res.join("") + "`";
+  return ast.arguments?.length == 2 && ast.arguments[0].type == "NilLiteral";
 }
 function selfToThis(ast) {
   if (ast.type === "Identifier" && ast.name === "self") {
@@ -306,25 +272,12 @@ function clsToThis(ast) {
     ast.name = "this";
   }
 }
-function smartPack(args) {
-  switch (args.length) {
-    case 0:
-      return "";
-    case 1:
-      if (args[0].type === "VarargLiteral") {
-        return "[...varargs]";
-      } else {
-        return ast2js(args[0]);
-      }
-    default:
-      return `[${ast2js(args, ", ")}]`;
-  }
-}
+
 function tagVarargAsSpread(args) {
   if (args.length === 0) {
     return args;
   }
-  let last = args[args.length - 1];
+  const last = args[args.length - 1];
   if (last.type === "VarargLiteral") {
     last.asSpread = true;
   }
@@ -386,12 +339,77 @@ function isSelectNumber(node) {
 }
 
 function isClassDeclare(ast) {
-  return ast.variables.length == 1 && ast.init.length == 1 && ((ast.init[0].type == 'TableCallExpression' || ast.init[0].type == 'CallExpression') && ast.init[0].base?.name == 'class')
+  return (
+    ast.variables.length == 1 &&
+    ast.init.length == 1 &&
+    (ast.init[0].type == "TableCallExpression" ||
+      ast.init[0].type == "CallExpression") &&
+    ast.init[0].base?.name == "class"
+  );
 }
-function ast2js(ast, joiner) {
+function lua2ast(lua_code) {
   try {
+    return luaparse.parse(lua_code);
+  } catch (error) {
+    return { error: error.message };
+  }
+}
+function ast2js(ast, opts = {}) {
+  function luaAssert2JsIfThrow(ast) {
+    // tansform lua assert(bool, error) to js if (!bool) {throw new Error(error)}
+    if (ast.arguments.length == 1) {
+      return `if (!(${_ast2js(
+        ast.arguments[0]
+      )})) {throw new Error("assertion failed!")}`;
+    } else {
+      return `if (!(${_ast2js(ast.arguments[0])})) {throw new Error(${_ast2js(
+        ast.arguments[1]
+      )})}`;
+    }
+  }
+  function luaFormat2JsTemplate(ast) {
+    const s = getLuaStringToken(ast.arguments[0].raw);
+    let status = 0;
+    const res = [];
+    let j = 0;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c === "%") {
+        if (status === 0) {
+          status = 1;
+        } else if (status === 1) {
+          status = 0;
+          res.push(c);
+        }
+      } else if (c === "s" && status === 1) {
+        j = j + 1;
+        res.push("${" + _ast2js(ast.arguments[j]) + "}");
+        status = 0;
+      } else if (c === "`") {
+        res.push("\\" + c);
+      } else {
+        res.push(c);
+      }
+    }
+    return "`" + res.join("") + "`";
+  }
+  function smartPack(args) {
+    switch (args.length) {
+      case 0:
+        return "";
+      case 1:
+        if (args[0].type === "VarargLiteral") {
+          return "[...varargs]";
+        } else {
+          return _ast2js(args[0]);
+        }
+      default:
+        return `[${args.map(_ast2js).join(", ")}]`;
+    }
+  }
+  function _ast2js(ast) {
     if (ast instanceof Array) {
-      return ast.map(ast2js).join(joiner || ";\n");
+      return ast.map(_ast2js).join(";\n");
     }
     switch (ast.type) {
       case "Chunk":
@@ -400,34 +418,42 @@ function ast2js(ast, joiner) {
             e.asExport = true;
           }
         });
-        return ast2js(ast.body);
-      case "Identifier":
-        return toCamel(IdentifierMap[ast.name] || ast.name)
+        return _ast2js(ast.body);
+      case "Identifier": {
+        const s = IdentifierMap[ast.name] || ast.name;
+        return opts.camelStyle ? toCamel(s) : s;
+      }
       case "BreakStatement":
         return "break";
       case "DoStatement":
-        return `{${ast2js(ast.body)}}`;
+        return `{${_ast2js(ast.body)}}`;
       case "AssignmentStatement":
-      case "LocalStatement":
+      case "LocalStatement": {
         if (isClassDeclare(ast)) {
-          ast.init[0].className = toCamel(ast.variables[0].name)
-          return ast2js(ast.init[0])
+          const s = ast.variables[0].name;
+          ast.init[0].className = opts.camelStyle ? toCamel(s) : s;
+          return _ast2js(ast.init[0]);
         }
         if (isTableInsert(ast)) {
-          return `${ast2js(ast.variables[0].base)}.push(${ast2js(ast.init)})`;
+          return `${_ast2js(ast.variables[0].base)}.push(${_ast2js(ast.init)})`;
         }
-        let scopePrefix = ast.type === "LocalStatement" ? "let " : "";
+        const scopePrefix = ast.type === "LocalStatement" ? "let " : "";
         switch (ast.init.length) {
           case 0:
-            return `${scopePrefix}${ast2js(ast.variables, ", ")}`;
+            return `${scopePrefix}${ast.variables.map(_ast2js).join(", ")}`;
           case 1:
-            return `${scopePrefix}${smartPack(ast.variables)} = ${ast2js(ast.init[0])}`;
+            return `${scopePrefix}${smartPack(ast.variables)} = ${_ast2js(
+              ast.init[0]
+            )}`;
           default:
             tagVarargAsSpread(ast.init);
-            return `${scopePrefix}${smartPack(ast.variables)} = ${smartPack(ast.init)}`;
+            return `${scopePrefix}${smartPack(ast.variables)} = ${smartPack(
+              ast.init
+            )}`;
         }
-      case "UnaryExpression":
-        let exp = ast2js(ast.argument);
+      }
+      case "UnaryExpression": {
+        const exp = _ast2js(ast.argument);
         switch (ast.operator) {
           case "not":
             return `!${exp}`;
@@ -436,16 +462,22 @@ function ast2js(ast, joiner) {
           default:
             return `${ast.operator}${exp}`;
         }
+      }
       case "BinaryExpression":
         ast.left.isBinaryExpressionMode = true;
         ast.right.isBinaryExpressionMode = true;
-        return `(${ast2js(ast.left)} ${binaryOpMap[ast.operator] || ast.operator} ${ast2js(ast.right)})`;
+        return `(${_ast2js(ast.left)} ${
+          binaryOpMap[ast.operator] || ast.operator
+        } ${_ast2js(ast.right)})`;
       case "BooleanLiteral":
         return ast.raw;
       case "NumericLiteral":
         return ast.value;
       case "StringLiteral":
-        if (ast.isBinaryExpressionMode && getLuaStringToken(ast.raw) === "table") {
+        if (
+          ast.isBinaryExpressionMode &&
+          getLuaStringToken(ast.raw) === "table"
+        ) {
           return '"object"';
         } else {
           return luaLiteral2Js(ast.raw);
@@ -453,9 +485,15 @@ function ast2js(ast, joiner) {
       case "NilLiteral":
         return "undefined";
       case "VarargLiteral":
-        return ast.asSpread ? "...varargs" : ast.asArray ? "[...varargs]" : "varargs[0]";
+        return ast.asSpread
+          ? "...varargs"
+          : ast.asArray
+          ? "[...varargs]"
+          : "varargs[0]";
       case "LogicalExpression":
-        return `(${ast2js(ast.left)} ${binaryOpMap[ast.operator] || ast.operator} ${ast2js(ast.right)})`;
+        return `(${_ast2js(ast.left)} ${
+          binaryOpMap[ast.operator] || ast.operator
+        } ${_ast2js(ast.right)})`;
       case "TableConstructorExpression":
         if (ast.isClassMode) {
           for (const field of ast.fields) {
@@ -466,95 +504,109 @@ function ast2js(ast, joiner) {
               } else {
                 field.isClassMode = true;
               }
-
-            } else {
-
             }
           }
-          return `{${ast2js(ast.fields, "\n")}}`;
+          return `{${ast.fields.map(_ast2js).join("\n")}}`;
         } else if (ast.fields.length === 0) {
           // try guess from later code whether contains t[#t+1] or table.concat(t)
-          return '[]'
+          return "[]";
         } else {
-          let is_pure_array = ast.fields.every((e) => e.type == "TableValue");
+          const is_pure_array = ast.fields.every((e) => e.type == "TableValue");
           if (is_pure_array) {
             tagVarargAsSpread(ast.fields.map((e) => e.value));
-            return `[${ast2js(ast.fields, ", ")}]`;
+            return `[${ast.fields.map(_ast2js).join(", ")}]`;
           } else {
-            return `{${ast2js(ast.fields, ", ")}}`;
+            return `{${ast.fields.map(_ast2js).join(", ")}}`;
           }
         }
       case "TableKeyString":
         if (ast.isClassMode) {
           if (ast.value.type == "FunctionDeclaration") {
             ast.value.identifier = {
-              "type": "Identifier",
-              "name": ast.key.name
-            }
-            return `${ast2js(ast.value)}`;
+              type: "Identifier",
+              name: ast.key.name,
+            };
+            return `${_ast2js(ast.value)}`;
           } else {
-            return `${ast2js(ast.key)} = ${ast2js(ast.value)}`;
+            return `${_ast2js(ast.key)} = ${_ast2js(ast.value)}`;
           }
         } else {
-          return `${ast2js(ast.key)}: ${ast2js(ast.value)}`;
+          return `${_ast2js(ast.key)}: ${_ast2js(ast.value)}`;
         }
       case "TableKey":
-        return `[${ast2js(ast.key)}]: ${ast2js(ast.value)}`;
+        return `[${_ast2js(ast.key)}]: ${_ast2js(ast.value)}`;
       case "TableValue":
-        return ast2js(ast.value);
+        return _ast2js(ast.value);
       case "IndexExpression":
-        if (ast.index?.type == 'NumericLiteral' && ast.index.value >= 1) {
-          ast.index.value = ast.index.value - 1
-          return `${ast2js(ast.base)}[${ast2js(ast.index)}]`;
+        if (ast.index?.type == "NumericLiteral" && ast.index.value >= 1) {
+          ast.index.value = ast.index.value - 1;
+          return `${_ast2js(ast.base)}[${_ast2js(ast.index)}]`;
         } else {
-          return `${ast2js(ast.base)}[${ast2js(ast.index)}]`;
+          return `${_ast2js(ast.base)}[${_ast2js(ast.index)}]`;
         }
 
       case "IfStatement":
-        return ast.clauses.map(ast2js).join("\n");
+        return ast.clauses.map(_ast2js).join("\n");
       case "IfClause":
-        return `if (${ast2js(ast.condition)}) {${ast2js(ast.body)}}`;
+        return `if (${_ast2js(ast.condition)}) {${_ast2js(ast.body)}}`;
       case "ElseClause":
-        return `else {${ast.body.map(ast2js).join(";")}}`;
+        return `else {${ast.body.map(_ast2js).join(";")}}`;
       case "ElseifClause":
-        return `else if (${ast2js(ast.condition)}) {${ast2js(ast.body)}}`;
+        return `else if (${_ast2js(ast.condition)}) {${_ast2js(ast.body)}}`;
       case "FunctionDeclaration":
         tagVarargAsSpread(ast.parameters);
         if (ast.isClassMode) {
-          let firstParamsName = ast.parameters[0]?.name;
-          switch (firstParamsName) {
-            case "self":
-              traverseAst(ast.body, selfToThis);
-              return `${ast2js(ast.identifier)}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
-            case "cls":
-              traverseAst(ast.body, clsToThis);
-              return `static ${ast2js(ast.identifier)}(${ast2js(ast.parameters.slice(1), ", ")}) {${ast2js(ast.body)}}`;
-            default:
-              return `${ast2js(ast.identifier)}(${ast2js(ast.parameters, ", ")}) {${ast2js(ast.body)}}`;
+          const firstParamsName = ast.parameters[0]?.name;
+          if (firstParamsName === "self") {
+            traverseAst(ast.body, selfToThis);
+            return `${_ast2js(ast.identifier)}(${_ast2js(
+              ast.parameters.slice(1),
+              ", "
+            )}) {${_ast2js(ast.body)}}`;
+          } else if (firstParamsName === "cls") {
+            traverseAst(ast.body, clsToThis);
+            return `static ${_ast2js(ast.identifier)}(${_ast2js(
+              ast.parameters.slice(1),
+              ", "
+            )}) {${_ast2js(ast.body)}}`;
+          } else {
+            return `${_ast2js(ast.identifier)}(${ast.parameters
+              .map(_ast2js)
+              .join(", ")}) {${_ast2js(ast.body)}}`;
           }
         } else {
           if (
+            opts.selfToThis &&
             ast.identifier?.type == "MemberExpression" &&
             ast.identifier?.indexer == "." &&
             ast.parameters[0]?.name == "self"
           ) {
-            ast.identifier.base = insertPrototypeNode(ast.identifier.base)
+            ast.identifier.base = insertPrototypeNode(ast.identifier.base);
             ast.parameters = ast.parameters.slice(1);
             traverseAst(ast.body, selfToThis);
-          } else if (ast.identifier?.type == "MemberExpression" && ast.identifier?.indexer == ":") {
-            ast.identifier.base = insertPrototypeNode(ast.identifier.base)
+          } else if (
+            opts.selfToThis &&
+            ast.identifier?.type == "MemberExpression" &&
+            ast.identifier?.indexer == ":"
+          ) {
+            ast.identifier.base = insertPrototypeNode(ast.identifier.base);
             traverseAst(ast.body, selfToThis);
-          } else if (ast.identifier?.type == "MemberExpression" &&
+          } else if (
+            opts.clsToThis &&
+            ast.identifier?.type == "MemberExpression" &&
             ast.identifier?.indexer == "." &&
-            ast.parameters[0]?.name == "cls") {
+            ast.parameters[0]?.name == "cls"
+          ) {
             ast.parameters = ast.parameters.slice(1);
             traverseAst(ast.body, clsToThis);
           }
-          let main = `(${ast.parameters.map(ast2js).join(", ")}){${ast2js(ast.body)}}`;
+          const main = `(${ast.parameters.map(_ast2js).join(", ")}){${_ast2js(
+            ast.body
+          )}}`;
           if (ast.identifier == null) {
             return `function ${main}`;
           } else {
-            let fnName = ast2js(ast.identifier);
+            const fnName = _ast2js(ast.identifier);
             if (ast.identifier?.type == "MemberExpression") {
               return `${fnName} = function ${main}`;
             } else {
@@ -565,10 +617,10 @@ function ast2js(ast, joiner) {
         }
       case "MemberExpression":
         // let hide_self = ast.indexer == ":";
-        return `${ast2js(ast.base)}.${ast2js(ast.identifier)}`;
+        return `${_ast2js(ast.base)}.${_ast2js(ast.identifier)}`;
       case "ReturnStatement":
-        if (isReturnNilAndErr(ast)) {
-          return `throw new Error(${ast2js(ast.arguments[1])})`
+        if (opts.returnNilToThrow && isReturnNilAndErr(ast)) {
+          return `throw new Error(${_ast2js(ast.arguments[1])})`;
         }
         tagVarargAsSpread(ast.arguments);
         if (ast.asExport) {
@@ -578,71 +630,93 @@ function ast2js(ast, joiner) {
         }
 
       case "CallStatement":
-        return ast2js(ast.expression);
+        return _ast2js(ast.expression);
       case "CallExpression":
-        if (ast.base.type == "Identifier" && ast.base.name == "class" && ast.className) {
-          ast.arguments[0].isClassMode = true
-          const extendsToken = ast.arguments.length == 1 ? '' : 'extends ' + ast2js(ast.arguments[1])
-          return `class ${ast.className} ${extendsToken} ${ast2js(ast.arguments[0])}`;
+        if (
+          ast.base.type == "Identifier" &&
+          ast.base.name == "class" &&
+          ast.className
+        ) {
+          ast.arguments[0].isClassMode = true;
+          const extendsToken =
+            ast.arguments.length == 1
+              ? ""
+              : "extends " + _ast2js(ast.arguments[1]);
+          return `class ${ast.className} ${extendsToken} ${_ast2js(
+            ast.arguments[0]
+          )}`;
         } else if (isClassExtends(ast)) {
-          let [cls, pcls] = ast.arguments
-          cls.isClassMode = true
-          return `class ${ast2js(cls)} extends ${ast2js(pcls)}`;
+          const [cls, pcls] = ast.arguments;
+          cls.isClassMode = true;
+          return `class ${_ast2js(cls)} extends ${_ast2js(pcls)}`;
         } else if (isSelectLength(ast)) {
           return `varargs.length`;
         } else if (isSelectNumber(ast)) {
-          return `varargs[${ast2js(ast.arguments[0])}]`;
-        } else if (isStringFormatCall(ast)) {
+          return `varargs[${_ast2js(ast.arguments[0])}]`;
+        } else if (opts.stringFormat && isStringFormatCall(ast)) {
           return luaFormat2JsTemplate(ast);
-        } else if (isErrorCall(ast)) {
-          return luaError2JsThrow(ast);
-        } else if (isTableInsertCall(ast)) {
-          return luaInsert2JsPush(ast);
-        } else if (isTableInsertAtHeadCall(ast)) {
-          return luaInsert2JsUnshift(ast);
-        } else if (isTableConcatCall(ast)) {
-          return luaConcat2JsJoin(ast);
+        } else if (opts.errorToThrow && isErrorCall(ast)) {
+          return `throw new Error(${_ast2js(ast.arguments[0])})`;
+        } else if (opts.tableInsert && isTableInsertCall(ast)) {
+          // tansform lua table.insert(t, 1) / table_insert(t, 1) to js t.push(1)
+          const [base, element] = ast.arguments;
+          return `${_ast2js(base)}.push(${_ast2js(element)})`;
+        } else if (opts.tableInsert && isTableInsertAtHeadCall(ast)) {
+          const [base, index, element] = ast.arguments;
+          return `${_ast2js(base)}.unshift(${_ast2js(element)})`;
+        } else if (opts.tableConcat && isTableConcatCall(ast)) {
+          return `${_ast2js(ast.arguments[0])}.join(${
+            ast.arguments[1] ? _ast2js(ast.arguments[1]) : '""'
+          })`;
           // } else if (isAssertCall(ast)) {
           //   return luaAssert2JsIfThrow(ast);
-        } else if (isTypeCall(ast)) {
-          return luaType2JsTypeof(ast);
+        } else if (opts.typeToTypeof && isTypeCall(ast)) {
+          return `typeof(${_ast2js(ast.arguments[0])})`;
         } else if (ast.arguments[0]?.name == "this") {
           tagVarargAsSpread(ast.arguments);
-          let rest = ast.arguments.slice(1);
+          const rest = ast.arguments.slice(1);
           if (ast.base.base) {
             ast.base.base = {
-              "type": "MemberExpression",
-              "indexer": ".",
-              "identifier": {
-                "type": "Identifier",
-                "name": "prototype"
+              type: "MemberExpression",
+              indexer: ".",
+              identifier: {
+                type: "Identifier",
+                name: "prototype",
               },
-              "base": ast.base.base
-            }
+              base: ast.base.base,
+            };
           }
-          return `${ast2js(ast.base)}.call(this${rest.length > 0 ? ", " : ""}${rest.map(ast2js).join(", ")})`;
+          return `${_ast2js(ast.base)}.call(this${
+            rest.length > 0 ? ", " : ""
+          }${rest.map(_ast2js).join(", ")})`;
         } else {
           tagVarargAsSpread(ast.arguments);
-          return `${ast2js(ast.base)}(${ast.arguments.map(ast2js).join(", ")})`;
+          return `${_ast2js(ast.base)}(${ast.arguments
+            .map(_ast2js)
+            .join(", ")})`;
         }
       case "TableCallExpression":
-        if (ast.base.type == "Identifier" && ast.base.name == "class") {
+        if (
+          opts.class &&
+          ast.base.type == "Identifier" &&
+          ast.base.name == "class"
+        ) {
           ast.arguments.isClassMode = true;
           if (ast.className) {
-            return `class ${ast.className} ${ast2js(ast.arguments)}`;
+            return `class ${ast.className} ${_ast2js(ast.arguments)}`;
           } else {
-            return `class ${ast2js(ast.arguments)}`;
+            return `class ${_ast2js(ast.arguments)}`;
           }
         } else {
-          return `${ast2js(ast.base)}(${ast2js(ast.arguments)})`;
+          return `${_ast2js(ast.base)}(${_ast2js(ast.arguments)})`;
         }
 
       case "StringCallExpression":
-        return `${ast2js(ast.base)}(${ast2js(ast.argument)})`;
-      case "ForNumericStatement":
-        let v = ast2js(ast.variable);
-        let step = ast.step == null ? 1 : ast2js(ast.step);
-        let start = ast2js(ast.start);
+        return `${_ast2js(ast.base)}(${_ast2js(ast.argument)})`;
+      case "ForNumericStatement": {
+        const v = _ast2js(ast.variable);
+        const step = ast.step == null ? 1 : _ast2js(ast.step);
+        let start = _ast2js(ast.start);
         let compare_op;
         if (start === 1) {
           start = 0;
@@ -650,46 +724,52 @@ function ast2js(ast, joiner) {
         } else {
           compare_op = step < 0 ? ">=" : "<=";
         }
-        return `for (let ${v}=${start}; ${v} ${compare_op} ${ast2js(ast.end)}; ${v}=${v}+${step}) {${ast2js(
-          ast.body
-        )}}`;
-      case "ForGenericStatement":
+        return `for (let ${v}=${start}; ${v} ${compare_op} ${_ast2js(
+          ast.end
+        )}; ${v}=${v}+${step}) {${_ast2js(ast.body)}}`;
+      }
+
+      case "ForGenericStatement": {
         let iter;
         if (ast.iterators.length == 1) {
-          let iter_name = ast.iterators[0].base.name;
+          const iter_name = ast.iterators[0].base.name;
           if (iter_name == "ipairs") {
-            iter = `${ast2js(ast.iterators[0].arguments)}.entries()`;
+            iter = `${_ast2js(ast.iterators[0].arguments)}.entries()`;
           } else if (iter_name == "pairs") {
-            iter = `Object.entries(${ast2js(ast.iterators[0].arguments)})`;
+            iter = `Object.entries(${_ast2js(ast.iterators[0].arguments)})`;
           } else {
-            iter = ast.iterators.map(ast2js);
+            iter = ast.iterators.map(_ast2js);
           }
         } else {
-          iter = ast.iterators.map(ast2js);
+          iter = ast.iterators.map(_ast2js);
         }
-        return `for (let ${smartPack(ast.variables)} of ${iter}) {${ast2js(ast.body)}}`;
+        return `for (let ${smartPack(ast.variables)} of ${iter}) {${_ast2js(
+          ast.body
+        )}}`;
+      }
       case "WhileStatement":
-        return `while (${ast2js(ast.condition)}) {${ast2js(ast.body)}}`;
+        return `while (${_ast2js(ast.condition)}) {${_ast2js(ast.body)}}`;
       default:
         throw new Error(`Unsupported AST node type: ${ast.type}`);
     }
+  }
+  try {
+    return _ast2js(ast);
   } catch (error) {
+    console.error(error);
     return `[${error.message}]`;
   }
 }
-function lua2ast(lua_code) {
-  try {
-    return luaparse.parse(lua_code);
-  } catch (error) {
-    return { error: error.message };
-  }
-}
 
-function lua2js(lua_code) {
+function lua2js(lua_code, opts) {
   let js = "";
   try {
-    js = ast2js(lua2ast(lua_code));
-    return prettier.format(js, { parser: "babel", rules: { "no-debugger": "off" }, plugins: [parserBabel] });
+    js = ast2js(lua2ast(lua_code), opts);
+    return prettier.format(js, {
+      parser: "babel",
+      rules: { "no-debugger": "off" },
+      plugins: [parserBabel],
+    });
   } catch (error) {
     return `/*\n${error}\n*/\n${js}`;
   }
