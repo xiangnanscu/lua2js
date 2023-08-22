@@ -60,6 +60,7 @@ function toCamel(s) {
 //             }
 // }
 const IdentifierMap = {
+  init: "constructor",
   constructor: "_constructor",
   extends: "_extends",
   class: "_class",
