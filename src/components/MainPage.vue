@@ -1,4 +1,3 @@
-<!-- eslint-disable no-undef -->
 <script setup>
 import { ref, computed, watch } from "vue";
 import { lua2js, lua2ast } from "../lua2js.mjs";
@@ -78,6 +77,7 @@ const optionNamesDict = {
   errorToThrow: true,
   tostring: true,
   unpack: true,
+  tonumber: true,
   class: true,
   selfToThis: true,
   clsToThis: true,
@@ -158,8 +158,12 @@ watch(checkAll, (checkAll) => {
               id="label-all"
               v-model="checkAll"
             />
-            <label class="form-check-label" for="label-all">
-              enable all features
+            <label
+              class="form-check-label"
+              for="label-all"
+              style="color:red"
+            >
+              select all
             </label>
           </div>
           <div
@@ -174,7 +178,10 @@ watch(checkAll, (checkAll) => {
               v-model="selectNames"
               :value="c"
             />
-            <label class="form-check-label" :for="`label` + i">
+            <label
+              class="form-check-label"
+              :for="`label` + i"
+            >
               {{ c }}
             </label>
           </div>
@@ -198,21 +205,27 @@ watch(checkAll, (checkAll) => {
               :value="showLuaAst"
               type="checkbox"
               class="form-check-input"
-            />show lua ast</label
-          >
+            />show lua ast</label>
         </div>
         <div v-if="showLuaAst">
           <pre>{{ luaast }}</pre>
         </div>
         <div v-else>
-          <highlightjs language="lua" :code="luacode" />
+          <highlightjs
+            language="lua"
+            :code="luacode"
+          />
         </div>
       </div>
       <div class="col">
         <!-- <pre id="jscode2"><code class="language-javascript" v-html="jscode_highlight_html"></code></pre> -->
         <button @click="copyJs">copy js</button>
         <button @click="saveJsAs">save as</button>
-        <highlightjs id="jscode" language="javascript" :code="jscode" />
+        <highlightjs
+          id="jscode"
+          language="javascript"
+          :code="jscode"
+        />
       </div>
     </div>
   </div>
