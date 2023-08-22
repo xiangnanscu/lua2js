@@ -525,13 +525,12 @@ function ast2js(ast, opts = {}) {
       case "TableValue":
         return _ast2js(ast.value);
       case "IndexExpression":
-        if (ast.index?.type == "NumericLiteral" && ast.index.value >= 1) {
+        if (opts.indexMinusOne && ast.index?.type == "NumericLiteral" && ast.index.value >= 1) {
           ast.index.value = ast.index.value - 1;
           return `${_ast2js(ast.base)}[${_ast2js(ast.index)}]`;
         } else {
           return `${_ast2js(ast.base)}[${_ast2js(ast.index)}]`;
         }
-
       case "IfStatement":
         return ast.clauses.map(_ast2js).join("\n");
       case "IfClause":

@@ -7,6 +7,7 @@ const parseOptions = {};
 const jscodeRef = ref(null);
 const showLuaAst = ref(false);
 const luacode = ref(`\
+print(a[1])
 local a = {unpack(t)}
 local function snake_case_name(x, y)
   if x > 0 or y > 0then
@@ -72,7 +73,7 @@ local TestClass = class {
 //   echo = function(self) end
 // }, Parent)`
 const optionNamesDict = {
-  camelStyle: false,
+  indexMinusOne: true,
   returnNilToThrow: true,
   errorToThrow: true,
   tostring: true,
@@ -85,6 +86,7 @@ const optionNamesDict = {
   stringFormat: true,
   tableConcat: true,
   tableInsert: true,
+  camelStyle: false,
 };
 const optionNames = Object.keys(optionNamesDict);
 const selectNames = ref(
