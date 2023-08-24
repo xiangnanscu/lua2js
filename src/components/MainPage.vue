@@ -8,13 +8,14 @@ const jscodeRef = ref(null);
 const showLuaAst = ref(false);
 const luacode = ref(`\
 local a = dict({a=1}, b)
+local a = list({1,2}, b)
 print(a[1])
 local a = {unpack(t)}
 local function snake_case_name(x, y)
   if x > 0 or y > 0then
     return nil, string.format('error: x is %s and y is %s', x, y)
   else
-    return x + y
+    return x + y, x - y
   end
 end
 console.log(string.format("hello %s", world))
@@ -79,6 +80,7 @@ const optionNamesDict = {
   errorToThrow: true,
   tostring: true,
   dict: true,
+  list: true,
   unpack: true,
   tonumber: true,
   class: true,
@@ -96,15 +98,11 @@ const selectNames = ref(
     .filter(([k, v]) => v)
     .map(([k, v]) => k)
 );
-const selectOptions = computed(() =>
-  Object.fromEntries(selectNames.value.map((e) => [e, true]))
-);
+const selectOptions = computed(() => Object.fromEntries(selectNames.value.map((e) => [e, true])));
 const jscode = computed(() => lua2js(luacode.value, selectOptions.value));
 
 const luaast = computed(() => lua2ast(luacode.value, selectOptions.value));
-const jscode_highlight_html = computed(
-  () => hljs.highlight(jscode.value, { language: "js" }).value
-);
+const jscode_highlight_html = computed(() => hljs.highlight(jscode.value, { language: "js" }).value);
 function copyJs() {
   CopyToClipboard("jscode");
 }
@@ -156,36 +154,12 @@ watch(checkAll, (checkAll) => {
       <div class="col-1">
         <div :class="{ 'error-wrapper': error }">
           <div class="form-check">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="label-all"
-              v-model="checkAll"
-            />
-            <label
-              class="form-check-label"
-              for="label-all"
-              style="color:red"
-            >
-              select all
-            </label>
+            <input class="form-check-input" type="checkbox" id="label-all" v-model="checkAll" />
+            <label class="form-check-label" for="label-all" style="color: red"> select all </label>
           </div>
-          <div
-            v-for="(c, i) of optionNames"
-            :key="i"
-            :class="{ 'form-check': true }"
-          >
-            <input
-              class="form-check-input"
-              type="checkbox"
-              :id="`label` + i"
-              v-model="selectNames"
-              :value="c"
-            />
-            <label
-              class="form-check-label"
-              :for="`label` + i"
-            >
+          <div v-for="(c, i) of optionNames" :key="i" :class="{ 'form-check': true }">
+            <input class="form-check-input" type="checkbox" :id="`label` + i" v-model="selectNames" :value="c" />
+            <label class="form-check-label" :for="`label` + i">
               {{ c }}
             </label>
           </div>
@@ -204,32 +178,22 @@ watch(checkAll, (checkAll) => {
       <div class="col">
         <div class="form-check-inline">
           <label class="form-check-label">
-            <input
-              @input="showLuaAst = !showLuaAst"
-              :value="showLuaAst"
-              type="checkbox"
-              class="form-check-input"
-            />show lua ast</label>
+            <input @input="showLuaAst = !showLuaAst" :value="showLuaAst" type="checkbox" class="form-check-input" />show
+            lua ast</label
+          >
         </div>
         <div v-if="showLuaAst">
           <pre>{{ luaast }}</pre>
         </div>
         <div v-else>
-          <highlightjs
-            language="lua"
-            :code="luacode"
-          />
+          <highlightjs language="lua" :code="luacode" />
         </div>
       </div>
       <div class="col">
         <!-- <pre id="jscode2"><code class="language-javascript" v-html="jscode_highlight_html"></code></pre> -->
         <button @click="copyJs">copy js</button>
         <button @click="saveJsAs">save as</button>
-        <highlightjs
-          id="jscode"
-          language="javascript"
-          :code="jscode"
-        />
+        <highlightjs id="jscode" language="javascript" :code="jscode" />
       </div>
     </div>
   </div>

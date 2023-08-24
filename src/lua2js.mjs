@@ -118,9 +118,18 @@ function isTostringCall(ast) {
 }
 
 function isDictCall(ast) {
-  return ast.base?.type === "Identifier" && ast.base?.name == "dict";
+  return ast.base?.type === "Identifier" && ast.base?.name == "dict" ||
+    (ast.base?.type === "MemberExpression" &&
+      ast.base?.identifier?.name === "dict" &&
+      ast.base?.base?.name === "utils");
 }
 
+function isListCall(ast) {
+  return ast.base?.type === "Identifier" && ast.base?.name == "list" ||
+    (ast.base?.type === "MemberExpression" &&
+      ast.base?.identifier?.name === "list" &&
+      ast.base?.base?.name === "utils");
+}
 function isUnpackCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "unpack";
 }
@@ -633,6 +642,8 @@ function ast2js(ast, opts = {}) {
           return `String(${_ast2js(ast.arguments[0])})`;
         } else if (opts.dict && isDictCall(ast)) {
           return `{${ast.arguments.map((e) => `...(${_ast2js(e)})`).join(", ")}}`;
+        } else if (opts.list && isListCall(ast)) {
+          return `[${ast.arguments.map((e) => `...(${_ast2js(e)})`).join(", ")}]`;
         } else if (opts.unpack && isUnpackCall(ast)) {
           return `...${_ast2js(ast.arguments[0])}`;
         } else if (opts.tonumber && isTonumberCall(ast)) {
