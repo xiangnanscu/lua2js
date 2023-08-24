@@ -117,6 +117,10 @@ function isTostringCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "tostring";
 }
 
+function isDictCall(ast) {
+  return ast.base?.type === "Identifier" && ast.base?.name == "dict";
+}
+
 function isUnpackCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "unpack";
 }
@@ -625,8 +629,10 @@ function ast2js(ast, opts = {}) {
           return luaFormat2JsTemplate(ast);
         } else if (opts.errorToThrow && isErrorCall(ast)) {
           return `throw new Error(${_ast2js(ast.arguments[0])})`;
-        } else if (opts.errorToThrow && isTostringCall(ast)) {
+        } else if (opts.tostring && isTostringCall(ast)) {
           return `String(${_ast2js(ast.arguments[0])})`;
+        } else if (opts.dict && isDictCall(ast)) {
+          return `{${ast.arguments.map((e) => `...(${_ast2js(e)})`).join(", ")}}`;
         } else if (opts.unpack && isUnpackCall(ast)) {
           return `...${_ast2js(ast.arguments[0])}`;
         } else if (opts.tonumber && isTonumberCall(ast)) {

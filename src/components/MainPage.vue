@@ -7,6 +7,7 @@ const parseOptions = {};
 const jscodeRef = ref(null);
 const showLuaAst = ref(false);
 const luacode = ref(`\
+local a = dict({a=1}, b)
 print(a[1])
 local a = {unpack(t)}
 local function snake_case_name(x, y)
@@ -77,6 +78,7 @@ const optionNamesDict = {
   returnNilToThrow: true,
   errorToThrow: true,
   tostring: true,
+  dict: true,
   unpack: true,
   tonumber: true,
   class: true,
