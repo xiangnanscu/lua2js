@@ -7,6 +7,12 @@ const parseOptions = {};
 const jscodeRef = ref(null);
 const showLuaAst = ref(false);
 const luacode = ref(`\
+for i, e in ipairs(t) do
+  print(i, e)
+end
+for i, e in ipairs(t) do
+  print(e)
+end
 local a = dict({a=1}, b)
 local a = list({1,2}, b)
 print(a[1])
@@ -75,6 +81,8 @@ local TestClass = class {
 //   echo = function(self) end
 // }, Parent)`
 const optionNamesDict = {
+  printToConsoleLog: true,
+  tryUseOfLoop: true,
   indexMinusOne: true,
   returnNilToThrow: true,
   errorToThrow: true,

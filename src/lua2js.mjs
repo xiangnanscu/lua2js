@@ -138,6 +138,10 @@ function isTonumberCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "tonumber" && ast.arguments.length === 1;
 }
 
+function isPrintCall(ast) {
+  return ast.base?.type === "Identifier" && ast.base?.name == "print";
+}
+
 function isStringFormatCall(ast) {
   return (
     ((ast.base?.type === "Identifier" && ast.base?.name === "string_format") ||
@@ -646,6 +650,8 @@ function ast2js(ast, opts = {}) {
           return `[${ast.arguments.map((e) => `...(${_ast2js(e)})`).join(", ")}]`;
         } else if (opts.unpack && isUnpackCall(ast)) {
           return `...${_ast2js(ast.arguments[0])}`;
+        } else if (opts.printToConsoleLog && isPrintCall(ast)) {
+          return `console.log(${ast.arguments.map(_ast2js).join(', ')})`;
         } else if (opts.tonumber && isTonumberCall(ast)) {
           return `Number(${_ast2js(ast.arguments[0])})`;
         } else if (opts.tableInsert && isTableInsertCall(ast)) {
@@ -713,10 +719,21 @@ function ast2js(ast, opts = {}) {
 
       case "ForGenericStatement": {
         let iter;
+        let indexIgnored = true;
+        if (opts.tryUseOfLoop && ast.variables.length === 2) {
+          const isIndexVarible = (node) => {
+            if (typeof node == 'object' && node.type == 'Identifier' && node.name == ast.variables[0].name) {
+              indexIgnored = false
+            }
+          }
+          traverseAst(ast.body, isIndexVarible)
+          if (indexIgnored)
+            ast.variables = ast.variables.slice(1)
+        }
         if (ast.iterators.length == 1) {
           const iter_name = ast.iterators[0].base.name;
           if (iter_name == "ipairs") {
-            iter = `${_ast2js(ast.iterators[0].arguments)}.entries()`;
+            iter = `${_ast2js(ast.iterators[0].arguments)}${indexIgnored ? '' : '.entries()'}`;
           } else if (iter_name == "pairs") {
             iter = `Object.entries(${_ast2js(ast.iterators[0].arguments)})`;
           } else {
