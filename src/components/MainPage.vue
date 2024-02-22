@@ -142,8 +142,8 @@ watch(checkAll, (checkAll) => {
       <div class="col-1">
         <div :class="{ 'error-wrapper': error }">
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="label-all" v-model="showLuacode" />
-            <label class="form-check-label" for="label-all"> show lua code </label>
+            <input class="form-check-input" type="checkbox" id="label-showlua" v-model="showLuacode" />
+            <label class="form-check-label" for="label-showlua"> show lua code </label>
           </div>
           <div class="border"></div>
           <div class="form-check">
