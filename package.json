@@ -1,6 +1,6 @@
 {
   "name": "@xiangnanscu/lua2js",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "main": "src/lua2js.mjs",
   "bin": {
     "lua2js": "bin/lua2js.js"
@@ -8,12 +8,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "prerelease": "npm --no-git-tag-version version minor",
-    "release": "push_option=release npm run push",
-    "push": "git add . && git commit -am \"${msg:-push}\" && git push --push-option=${push_option:-nothing}",
-    "replace": "find .  -type d \\( -name .git -o -name node_modules \\) -prune -o  -type f  -exec  sed -i s/validator/field/g {} \\;",
-    "test": "node test.mjs"
+    "prerc": "npm --no-git-tag-version version minor",
+    "rc": "npm run push",
+    "commit": "git add . && git commit -am ",
+    "c": "npm run commit",
+    "push": "npm run commit",
+    "postpush": "while true; do timeout 5 git push origin && break; done",
+    "pull": "while true; do timeout 5 git pull --recurse-submodules origin && break; done"
   },
   "dependencies": {
     "@highlightjs/vue-plugin": "^2.1.0",
