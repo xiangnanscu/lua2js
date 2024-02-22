@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-    paths: 'package.json'
+    paths: "package.json"
 
 jobs:
   build:
@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
+          cache: pnpm
           node-version: 16
           registry-url: https://registry.npmjs.org/
       - run: npm ci
