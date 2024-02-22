@@ -4,7 +4,7 @@ import { lua2js, lua2ast, defaultOptions } from "../lua2js.mjs";
 import fs from "file-saver";
 
 const parseOptions = {};
-const jscodeRef = ref(null);
+const showLuacode = ref(null);
 const showLuaAst = ref(false);
 const luacode = ref(`\
 for i, e in ipairs(t) do
@@ -142,8 +142,13 @@ watch(checkAll, (checkAll) => {
       <div class="col-1">
         <div :class="{ 'error-wrapper': error }">
           <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="label-all" v-model="showLuacode" />
+            <label class="form-check-label" for="label-all"> show lua code </label>
+          </div>
+          <div class="border"></div>
+          <div class="form-check">
             <input class="form-check-input" type="checkbox" id="label-all" v-model="checkAll" />
-            <label class="form-check-label" for="label-all" style="color: red"> select all </label>
+            <label class="form-check-label" for="label-all" style="color: red"> enable all features</label>
           </div>
           <div v-for="(c, i) of optionNames" :key="i" :class="{ 'form-check': true }">
             <input class="form-check-input" type="checkbox" :id="`label` + i" v-model="selectNames" :value="c" />
@@ -163,7 +168,7 @@ watch(checkAll, (checkAll) => {
           @input="luacode = $event.target.value"
         ></textarea>
       </div>
-      <div class="col">
+      <div v-if="showLuacode" class="col">
         <div class="form-check-inline">
           <label class="form-check-label">
             <input @input="showLuaAst = !showLuaAst" :value="showLuaAst" type="checkbox" class="form-check-input" />show
