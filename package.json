@@ -1,6 +1,6 @@
 {
   "name": "@xiangnanscu/lua2js",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "main": "src/lua2js.mjs",
   "bin": {
     "lua2js": "bin/lua2js.js"
@@ -13,7 +13,7 @@
     "commit": "git add . && git commit -am ",
     "c": "npm run commit",
     "push": "npm run commit",
-    "postpush": "while true; do timeout 5 git push origin && break; done",
+    "postpush": "uname -s | grep -q Darwin && while true; do git push origin && break; done || while true; do timeout 5 git push origin && break; done",
     "pull": "while true; do timeout 5 git pull --recurse-submodules origin && break; done"
   },
   "dependencies": {
