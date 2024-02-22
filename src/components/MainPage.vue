@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from "vue";
-import { lua2js, lua2ast } from "../lua2js.mjs";
+import { lua2js, lua2ast, defaultOptions } from "../lua2js.mjs";
 import fs from "file-saver";
 
 const parseOptions = {};
@@ -80,29 +80,9 @@ local TestClass = class {
 // local Child = class({
 //   echo = function(self) end
 // }, Parent)`
-const optionNamesDict = {
-  printToConsoleLog: true,
-  tryUseOfLoop: true,
-  indexMinusOne: true,
-  returnNilToThrow: true,
-  errorToThrow: true,
-  tostring: true,
-  dict: true,
-  list: true,
-  unpack: true,
-  tonumber: true,
-  class: true,
-  selfToThis: true,
-  clsToThis: true,
-  typeToTypeof: true,
-  stringFormat: true,
-  tableConcat: true,
-  tableInsert: true,
-  camelStyle: false,
-};
-const optionNames = Object.keys(optionNamesDict);
+const optionNames = Object.keys(defaultOptions);
 const selectNames = ref(
-  Object.entries(optionNamesDict)
+  Object.entries(defaultOptions)
     .filter(([k, v]) => v)
     .map(([k, v]) => k)
 );

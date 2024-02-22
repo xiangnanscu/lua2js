@@ -1,7 +1,10 @@
 {
   "name": "@xiangnanscu/lua2js",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "main": "src/lua2js.mjs",
+  "bin": {
+    "lua2js": "bin/lua2js.js"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

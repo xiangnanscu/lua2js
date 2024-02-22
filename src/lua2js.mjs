@@ -3,6 +3,26 @@ import prettier from "prettier/standalone.js";
 import parserBabel from "prettier/parser-babel.js";
 
 // todo: for _, v in ipairs(t) => for v of t , NOT for [_, v] of t.entries()
+const defaultOptions = {
+  printToConsoleLog: true,
+  tryUseOfLoop: true,
+  indexMinusOne: true,
+  returnNilToThrow: true,
+  errorToThrow: true,
+  tostring: true,
+  dict: true,
+  list: true,
+  unpack: true,
+  tonumber: true,
+  class: true,
+  selfToThis: true,
+  clsToThis: true,
+  typeToTypeof: true,
+  stringFormat: true,
+  tableConcat: true,
+  tableInsert: true,
+  camelStyle: false,
+};
 function joinUnderscore(length) {
   return Array.from({ length }, () => "_").join("");
 }
@@ -379,6 +399,7 @@ function lua2ast(lua_code) {
   }
 }
 function ast2js(ast, opts = {}) {
+  opts = { ...defaultOptions, ...opts }
   function luaAssert2JsIfThrow(ast) {
     // tansform lua assert(bool, error) to js if (!bool) {throw new Error(error)}
     if (ast.arguments.length == 1) {
@@ -771,4 +792,4 @@ function lua2js(lua_code, opts) {
     return `/*\n${error}\n*/\n${js}`;
   }
 }
-export { lua2ast, lua2js, ast2js };
+export { lua2ast, lua2js, ast2js, defaultOptions };
