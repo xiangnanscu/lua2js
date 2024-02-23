@@ -13,16 +13,16 @@ jobs:
       - name: Setup node env 📦
         uses: actions/setup-node@v3
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
           registry-url: https://registry.npmjs.org
           check-latest: true
-          cache: 'npm'
+          cache: "npm"
 
       - name: Upgrade npm ✨
         run: npm i -g npm@latest
 
       - name: Install dependencies 🚀
-        run: npm ci --prefer-offline --no-audit --no-optional
+        run: npm i --prefer-offline --no-audit --no-optional
 
       - name: Build 🔧
         run: npm run build
