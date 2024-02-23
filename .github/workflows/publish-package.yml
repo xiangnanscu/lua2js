@@ -26,7 +26,7 @@ jobs:
           cache: pnpm
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
+      - run: pnpm i
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_PUBLISH_TOKEN}}
@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
-      - run: npm ci
+      - run: pnpm i
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
