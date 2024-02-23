@@ -3,16 +3,23 @@
 [@xiangnanscu/lua2js](https://xiangnanscu.github.io/lua2js/) transform lua to js literally.
 
 # Install
+
 ```sh
 npm install -g @xiangnanscu/lua2js
 ```
+
 # Usage
+
 ## command
+
 Concat one or more js files and transform them to one lua string:
+
 ```sh
 lua2js [options] file1, file2, ...
 ```
+
 where options are:
+
 ```js
 const defaultOptions = {
   printToConsoleLog: true,
@@ -35,23 +42,36 @@ const defaultOptions = {
   camelStyle: false,
 };
 ```
+
 ### examples
+
 Basic:
+
 ```sh
 lua2js foo.lua > foo.js
 ```
+
 To disable a feature `--no-[option]`:
+
 ```sh
-lua2js --no-printToConsoleLog foo.lua
+lua2js --no-camelStyle foo.lua
 ```
+
 To enable a feature `--[option]`:
+
 ```sh
-lua2js --printToConsoleLog foo.lua
+lua2js --camelStyle foo.lua
 ```
+
 ## api
+
 ```js
-import { lua2js } from 'lua2js';
-lua2js(`local a = 1`, {printToConsoleLog:true})
+import { lua2js } from "lua2js";
+
+const jscode = lua2js(`local snake_var = 1`, { camelStyle: true });
+// let snakeVar = 1;
 ```
+
 ## see also
+
 [@xiangnanscu/js2lua](https://xiangnanscu.github.io/js2lua/) transform js to lua
