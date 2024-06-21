@@ -14,10 +14,10 @@
     "commit": "git add . && git commit -am ",
     "c": "npm run commit",
     "push": "npm run commit",
-    "_push": "git push --recurse-submodules=on-demand origin",
-    "_pull": "git pull --recurse-submodules origin",
-    "postpush": "uname -s | grep -q Darwin && npm run _push || while true; do timeout 5 npm run _push && break; done",
-    "pull": "uname -s | grep -q Darwin && npm run _pull || while true; do timeout 5 npm run _pull && break; done"
+    "_push": "git push origin",
+    "_pull": "git pull origin",
+    "postpush": "uname -s | grep -q Darwin && npm run _push || while true; do timeout 10 npm run _push && break; done",
+    "pull": "uname -s | grep -q Darwin && npm run _pull || while true; do timeout 10 npm run _pull && break; done"
   },
   "dependencies": {
     "@highlightjs/vue-plugin": "^2.1.0",
