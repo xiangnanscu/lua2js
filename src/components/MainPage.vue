@@ -6,7 +6,8 @@ import fs from "file-saver";
 const parseOptions = {};
 const showLuacode = ref(null);
 const showLuaAst = ref(false);
-const luacode = ref(`\
+const quoteS = 'local x = [[`\\`\\\\`]]\n'
+const luacode = ref(quoteS + `\
 for i, e in ipairs(t) do
   print(i, e)
 end

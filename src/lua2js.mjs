@@ -138,17 +138,17 @@ function isTostringCall(ast) {
 }
 
 function isDictCall(ast) {
-  return ast.base?.type === "Identifier" && ast.base?.name == "dict" ||
-    (ast.base?.type === "MemberExpression" &&
-      ast.base?.identifier?.name === "dict" &&
-      ast.base?.base?.name === "utils");
+  return (
+    (ast.base?.type === "Identifier" && ast.base?.name == "dict") ||
+    (ast.base?.type === "MemberExpression" && ast.base?.identifier?.name === "dict" && ast.base?.base?.name === "utils")
+  );
 }
 
 function isListCall(ast) {
-  return ast.base?.type === "Identifier" && ast.base?.name == "list" ||
-    (ast.base?.type === "MemberExpression" &&
-      ast.base?.identifier?.name === "list" &&
-      ast.base?.base?.name === "utils");
+  return (
+    (ast.base?.type === "Identifier" && ast.base?.name == "list") ||
+    (ast.base?.type === "MemberExpression" && ast.base?.identifier?.name === "list" && ast.base?.base?.name === "utils")
+  );
 }
 function isUnpackCall(ast) {
   return ast.base?.type === "Identifier" && ast.base?.name == "unpack";
@@ -296,12 +296,12 @@ function getLuaStringToken(s) {
   }
 }
 function luaLiteral2Js(s) {
-  const c = s[0];
-  s = getLuaStringToken(s);
-  if (c == "[") {
-    return "`" + s.replace("`", "\\`") + "`";
+  const head = s[0];
+  const res = getLuaStringToken(s);
+  if (head == "[") {
+    return "`" + res.replaceAll("\\", "\\\\").replaceAll("`", "\\`") + "`";
   } else {
-    return c + s + c;
+    return head + res + head;
   }
 }
 function isReturnNilAndErr(ast) {
@@ -399,7 +399,7 @@ function lua2ast(lua_code) {
   }
 }
 function ast2js(ast, opts = {}) {
-  opts = { ...defaultOptions, ...opts }
+  opts = { ...defaultOptions, ...opts };
   function luaAssert2JsIfThrow(ast) {
     // tansform lua assert(bool, error) to js if (!bool) {throw new Error(error)}
     if (ast.arguments.length == 1) {
@@ -672,7 +672,7 @@ function ast2js(ast, opts = {}) {
         } else if (opts.unpack && isUnpackCall(ast)) {
           return `...${_ast2js(ast.arguments[0])}`;
         } else if (opts.printToConsoleLog && isPrintCall(ast)) {
-          return `console.log(${ast.arguments.map(_ast2js).join(', ')})`;
+          return `console.log(${ast.arguments.map(_ast2js).join(", ")})`;
         } else if (opts.tonumber && isTonumberCall(ast)) {
           return `Number(${_ast2js(ast.arguments[0])})`;
         } else if (opts.tableInsert && isTableInsertCall(ast)) {
@@ -743,18 +743,17 @@ function ast2js(ast, opts = {}) {
         let indexIgnored = true;
         if (opts.tryUseOfLoop && ast.variables.length === 2) {
           const isIndexVarible = (node) => {
-            if (typeof node == 'object' && node.type == 'Identifier' && node.name == ast.variables[0].name) {
-              indexIgnored = false
+            if (typeof node == "object" && node.type == "Identifier" && node.name == ast.variables[0].name) {
+              indexIgnored = false;
             }
-          }
-          traverseAst(ast.body, isIndexVarible)
-          if (indexIgnored)
-            ast.variables = ast.variables.slice(1)
+          };
+          traverseAst(ast.body, isIndexVarible);
+          if (indexIgnored) ast.variables = ast.variables.slice(1);
         }
         if (ast.iterators.length == 1) {
           const iter_name = ast.iterators[0].base.name;
           if (iter_name == "ipairs") {
-            iter = `${_ast2js(ast.iterators[0].arguments)}${indexIgnored ? '' : '.entries()'}`;
+            iter = `${_ast2js(ast.iterators[0].arguments)}${indexIgnored ? "" : ".entries()"}`;
           } else if (iter_name == "pairs") {
             iter = `Object.entries(${_ast2js(ast.iterators[0].arguments)})`;
           } else {
