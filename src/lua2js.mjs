@@ -6,21 +6,21 @@ import parserBabel from "prettier/parser-babel.js";
 const defaultOptions = {
   printToConsoleLog: true,
   tryUseOfLoop: true,
-  indexMinusOne: true,
-  returnNilToThrow: true,
+  indexMinusOne: false,
+  returnNilToThrow: false,
   errorToThrow: true,
   tostring: true,
-  dict: true,
-  list: true,
+  dict: false,
+  list: false,
   unpack: true,
   tonumber: true,
-  class: true,
+  class: false,
   selfToThis: true,
   clsToThis: true,
   typeToTypeof: true,
-  stringFormat: true,
-  tableConcat: true,
-  tableInsert: true,
+  stringFormat: false,
+  tableConcat: false,
+  tableInsert: false,
   camelStyle: false,
 };
 function joinUnderscore(length) {
@@ -84,6 +84,7 @@ const IdentifierMap = {
   constructor: "_constructor",
   extends: "_extends",
   class: "_class",
+  super: "_super",
   default: "_js_default",
   debugger: "_debugger",
 };
@@ -299,7 +300,7 @@ function luaLiteral2Js(s) {
   const head = s[0];
   const res = getLuaStringToken(s);
   if (head == "[") {
-    return "`" + res.replaceAll("\\", "\\\\").replaceAll("`", "\\`") + "`";
+    return "`" + res.replaceAll("\\", "\\\\").replaceAll("`", "\\`").replaceAll("$", "\\$") + "`";
   } else {
     return head + res + head;
   }
@@ -450,7 +451,7 @@ function ast2js(ast, opts = {}) {
   }
   function _ast2js(ast) {
     if (ast instanceof Array) {
-      return ast.map(_ast2js).join(";");
+      return ast.map(_ast2js).join(";\n");
     }
     switch (ast.type) {
       case "Chunk":
@@ -573,11 +574,11 @@ function ast2js(ast, opts = {}) {
       case "IfStatement":
         return ast.clauses.map(_ast2js).join("\n");
       case "IfClause":
-        return `if (${_ast2js(ast.condition)}) {${_ast2js(ast.body)}}`;
+        return `if (${_ast2js(ast.condition)}) {\n${_ast2js(ast.body)}\n}`;
       case "ElseClause":
-        return `else {${ast.body.map(_ast2js).join(";")}}`;
+        return `else {\n${ast.body.map(_ast2js).join(";\n")}\n}`;
       case "ElseifClause":
-        return `else if (${_ast2js(ast.condition)}) {${_ast2js(ast.body)}}`;
+        return `else if (${_ast2js(ast.condition)}) {\n${_ast2js(ast.body)}\n}`;
       case "FunctionDeclaration":
         tagVarargAsSpread(ast.parameters);
         if (ast.isClassMode) {
@@ -617,7 +618,7 @@ function ast2js(ast, opts = {}) {
             ast.parameters = ast.parameters.slice(1);
             traverseAst(ast.body, clsToThis);
           }
-          const main = `(${ast.parameters.map(_ast2js).join(", ")}){${_ast2js(ast.body)}}`;
+          const main = `(${ast.parameters.map(_ast2js).join(", ")}){\n${_ast2js(ast.body)}}`;
           if (ast.identifier == null) {
             return `function ${main}`;
           } else {
@@ -641,17 +642,17 @@ function ast2js(ast, opts = {}) {
         if (ast.asExport) {
           return `export default ${smartPack(ast.arguments)}`;
         } else {
-          return `return ${smartPack(ast.arguments)}`;
+          return `return ${smartPack(ast.arguments)};`;
         }
 
       case "CallStatement":
         return _ast2js(ast.expression);
       case "CallExpression":
-        if (ast.base.type == "Identifier" && ast.base.name == "class" && ast.className) {
+        if (opts.class && ast.base.type == "Identifier" && ast.base.name == "class" && ast.className) {
           ast.arguments[0].isClassMode = true;
           const extendsToken = ast.arguments.length == 1 ? "" : "extends " + _ast2js(ast.arguments[1]);
           return `class ${ast.className} ${extendsToken} ${_ast2js(ast.arguments[0])}`;
-        } else if (isClassExtends(ast)) {
+        } else if (opts.class && isClassExtends(ast)) {
           const [cls, pcls] = ast.arguments;
           cls.isClassMode = true;
           return `class ${_ast2js(cls)} extends ${_ast2js(pcls)}`;
@@ -733,9 +734,9 @@ function ast2js(ast, opts = {}) {
         } else {
           compare_op = step < 0 ? ">=" : "<=";
         }
-        return `for (let ${v}=${start}; ${v} ${compare_op} ${_ast2js(ast.end)}; ${v}=${v}+${step}) {${_ast2js(
+        return `for (let ${v}=${start}; ${v} ${compare_op} ${_ast2js(ast.end)}; ${v}=${v}+${step}) {\n${_ast2js(
           ast.body
-        )}}`;
+        )}\n}`;
       }
 
       case "ForGenericStatement": {
@@ -762,7 +763,7 @@ function ast2js(ast, opts = {}) {
         } else {
           iter = ast.iterators.map(_ast2js);
         }
-        return `for (let ${smartPack(ast.variables)} of ${iter}) {${_ast2js(ast.body)}}`;
+        return `for (let ${smartPack(ast.variables)} of ${iter}) {\n${_ast2js(ast.body)}}`;
       }
       case "WhileStatement":
         return `while (${_ast2js(ast.condition)}) {${_ast2js(ast.body)}}`;

@@ -8,12 +8,6 @@ module.exports = {
     amd: true,
   },
   rules: {
-    "prettier/prettier": [
-      "warn",
-      {
-        printWidth: 120,
-      },
-    ],
     "max-len": ["warn", { code: 120, ignoreComments: true, ignoreStrings: true }],
     "prefer-const": [
       "error",
