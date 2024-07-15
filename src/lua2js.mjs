@@ -10,19 +10,22 @@ const defaultOptions = {
   returnNilToThrow: false,
   errorToThrow: true,
   tostring: true,
-  dict: false,
-  list: false,
+  dict: true,
+  list: true,
   unpack: true,
   tonumber: true,
   class: false,
   selfToThis: true,
   clsToThis: true,
   typeToTypeof: true,
-  stringFormat: false,
+  stringFormat: true,
   tableConcat: false,
-  tableInsert: false,
+  tableInsert: true,
   camelStyle: false,
 };
+function canBeArraowFunction(ast) {
+  return !ast.identifier && ast.body.length === 1 && ast.body[0].type == "ReturnStatement";
+}
 function joinUnderscore(length) {
   return Array.from({ length }, () => "_").join("");
 }
@@ -596,6 +599,8 @@ function ast2js(ast, opts = {}) {
           } else {
             return `${_ast2js(ast.identifier)}(${ast.parameters.map(_ast2js).join(", ")}) {${_ast2js(ast.body)}}`;
           }
+        } else if (canBeArraowFunction(ast)) {
+          return `(${ast.parameters.map(_ast2js).join(", ")}) => ${_ast2js(ast.body[0].arguments)}`;
         } else {
           if (
             opts.selfToThis &&

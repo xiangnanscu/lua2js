@@ -1,3 +1,4 @@
+local a = function(a, b) return string.format("%s + %s", a, b) end
 local x = [[`\`\\`]]
 for i, e in ipairs(t) do
   print(i, e)
