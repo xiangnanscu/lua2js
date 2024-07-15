@@ -2,7 +2,9 @@ import luaparse from "luaparse";
 import prettier from "prettier/standalone.js";
 import parserBabel from "prettier/parser-babel.js";
 
-// todo: for _, v in ipairs(t) => for v of t , NOT for [_, v] of t.entries()
+// TODO: for _, v in ipairs(t) => for v of t , NOT for [_, v] of t.entries()
+// this.foo[this.foo+1]=x => this.foo.push(x)
+// a..'1'..b => a + '1' + b (no parens)
 const defaultOptions = {
   printToConsoleLog: true,
   tryUseOfLoop: true,
