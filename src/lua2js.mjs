@@ -756,14 +756,21 @@ function ast2js(ast, opts = {}) {
             }
           };
           traverseAst(ast.body, isIndexVarible);
-          if (indexIgnored) ast.variables = ast.variables.slice(1);
+          // 对于ipairs，如果索引被忽略，我们可以优化为直接遍历值
+          // 但对于pairs，我们总是需要保持完整的解构赋值
         }
         if (ast.iterators.length == 1) {
           const iter_name = ast.iterators[0].base.name;
           if (iter_name == "ipairs") {
-            iter = `${_ast2js(ast.iterators[0].arguments)}${indexIgnored ? "" : ".entries()"}`;
+            if (indexIgnored) {
+              ast.variables = ast.variables.slice(1);
+              iter = `${_ast2js(ast.iterators[0].arguments)}`;
+            } else {
+              iter = `${_ast2js(ast.iterators[0].arguments)}.entries()`;
+            }
           } else if (iter_name == "pairs") {
             iter = `Object.entries(${_ast2js(ast.iterators[0].arguments)})`;
+            // 对于pairs，总是保持完整的变量列表，因为Object.entries返回[key, value]
           } else {
             iter = ast.iterators.map(_ast2js);
           }

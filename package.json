@@ -1,6 +1,6 @@
 {
   "name": "@xiangnanscu/lua2js",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "main": "src/lua2js.mjs",
   "type": "module",
   "bin": {
