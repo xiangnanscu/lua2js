@@ -734,13 +734,7 @@ function ast2js(ast, opts = {}) {
         const v = _ast2js(ast.variable);
         const step = ast.step == null ? 1 : _ast2js(ast.step);
         let start = _ast2js(ast.start);
-        let compare_op;
-        if (start === 1) {
-          start = 0;
-          compare_op = step < 0 ? ">" : "<";
-        } else {
-          compare_op = step < 0 ? ">=" : "<=";
-        }
+        let compare_op = step < 0 ? ">=" : "<=";
         return `for (let ${v}=${start}; ${v} ${compare_op} ${_ast2js(ast.end)}; ${v}=${v}+${step}) {\n${_ast2js(
           ast.body
         )}\n}`;
